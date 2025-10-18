@@ -214,6 +214,27 @@ android-targetSdk = "35"
 android-compileSdk = "36"
 ```
 
+### API Keys / Secrets
+
+The app uses Spotify API to retrieve the artists artworks. The repository does not include local secret files (for example, any API keys or credentials) for security reasons. To run the app you must add your own API keys file with your Spotify credentials.
+
+Create the following Kotlin file in the project (example path):
+
+`composeApp/src/commonMain/kotlin/com/example/jcarlosvelasco/loopmusic/secrets/ApiKeys.kt`
+
+Example minimal contents (replace the placeholder values with your actual keys):
+
+```kotlin
+package com.example.jcarlosvelasco.loopmusic.secrets
+
+object ApiKeys {
+    const val SPOTIFY_CLIENT_ID = "your_spotify_client_id"
+    const val SPOTIFY_CLIENT_SECRET = "your_spotify_client_secret"
+}
+```
+
+Make sure this file is not committed to the public repository. The project intentionally omits sensitive files from version control; add the file locally before building or running the app.
+
 ---
 
 ## 🎨 Theme Configuration
