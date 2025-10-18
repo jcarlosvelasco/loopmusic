@@ -226,10 +226,9 @@ Example minimal contents (replace the placeholder values with your actual keys):
 ```kotlin
 package com.example.jcarlosvelasco.loopmusic.secrets
 
-object ApiKeys {
-    const val SPOTIFY_CLIENT_ID = "your_spotify_client_id"
-    const val SPOTIFY_CLIENT_SECRET = "your_spotify_client_secret"
-}
+
+const val SPOTIFY_CLIENT_ID = "your_spotify_client_id"
+const val SPOTIFY_CLIENT_SECRET = "your_spotify_client_secret"
 ```
 
 Make sure this file is not committed to the public repository. The project intentionally omits sensitive files from version control; add the file locally before building or running the app.
