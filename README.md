@@ -6,7 +6,6 @@ A modern and elegant cross-platform music player application built with Kotlin M
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-blue.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.8.2-brightgreen.svg?style=flat)](https://www.jetbrains.com/lp/compose-multiplatform/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 [Features](#-features) • [Architecture](#-architecture) • [Technologies](#-technologies) • [Installation](#-installation) • [Development](#-development)
 
