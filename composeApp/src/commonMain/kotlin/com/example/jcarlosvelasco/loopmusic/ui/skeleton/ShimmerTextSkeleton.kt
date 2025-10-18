@@ -1,0 +1,67 @@
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun ShimmerTextSkeleton(
+    modifier: Modifier = Modifier,
+    width: Dp = 120.dp,
+    textStyle: TextStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
+) {
+    val density = LocalDensity.current
+
+    val textHeight = remember(textStyle) {
+        with(density) {
+            val fontSize = textStyle.fontSize
+            val lineHeight = textStyle.lineHeight.takeIf { it != TextUnit.Unspecified } ?: (fontSize * 1.2f)
+            lineHeight.toDp()
+        }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition()
+    val shimmerTranslate by infiniteTransition.animateFloat(
+        initialValue = -200f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    val shimmerBrush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFE0E0E0),
+            Color(0xFFF5F5F5),
+            Color(0xFFE0E0E0)
+        ),
+        start = Offset(shimmerTranslate, 0f),
+        end = Offset(shimmerTranslate + 200f, 0f)
+    )
+
+    Box(
+        modifier = modifier
+            .width(width)
+            .height(textHeight)
+            .background(
+                brush = shimmerBrush,
+                shape = RoundedCornerShape(2.dp)
+            )
+    )
+}
