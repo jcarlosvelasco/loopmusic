@@ -99,7 +99,26 @@ fun AlbumDetailScreen(
                                     horizontalArrangement = Arrangement.spacedBy(32.dp)
                                 ) {
                                     album?.let {
-                                        AlbumInfo(it, albumSongs, isLandscape, fullQualityArtwork)
+                                        AlbumInfo(
+                                            it,
+                                            albumSongs,
+                                            isLandscape,
+                                            fullQualityArtwork,
+                                            onPlayClick = {
+                                                audioViewModel.setPlaylistName(it.name)
+                                                audioViewModel.loadPlaylistAndPlay(
+                                                    playlist = albumSongs,
+                                                    isShuffled = false
+                                                )
+                                            },
+                                            onShuffleClick = {
+                                                audioViewModel.setPlaylistName(it.name)
+                                                audioViewModel.loadPlaylistAndPlay(
+                                                    playlist = albumSongs,
+                                                    isShuffled = true
+                                                )
+                                            }
+                                        )
                                     } ?: AlbumInfoSkeleton(isLandscape)
 
                                     album?.let {
@@ -110,7 +129,26 @@ fun AlbumDetailScreen(
                         } else {
                             item {
                                 album?.let {
-                                    AlbumInfo(it, albumSongs, isLandscape, fullQualityArtwork)
+                                    AlbumInfo(
+                                        it,
+                                        albumSongs,
+                                        isLandscape,
+                                        fullQualityArtwork,
+                                        onPlayClick = {
+                                            audioViewModel.setPlaylistName(it.name)
+                                            audioViewModel.loadPlaylistAndPlay(
+                                                playlist = albumSongs,
+                                                isShuffled = false
+                                            )
+                                        },
+                                        onShuffleClick = {
+                                            audioViewModel.setPlaylistName(it.name)
+                                            audioViewModel.loadPlaylistAndPlay(
+                                                playlist = albumSongs,
+                                                isShuffled = true
+                                            )
+                                        }
+                                    )
                                 } ?: AlbumInfoSkeleton(isLandscape)
 
                                 Spacer(modifier = Modifier.height(32.dp))

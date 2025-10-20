@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +40,6 @@ import com.example.jcarlosvelasco.loopmusic.ui.skeleton.ArtistSongsInfoSkeleton
 import com.example.jcarlosvelasco.loopmusic.ui.skeleton.FeaturedArtistSongsSkeleton
 import com.example.jcarlosvelasco.loopmusic.utils.let2
 import com.example.jcarlosvelasco.loopmusic.utils.log
-import com.kmpalette.extensions.bytearray.rememberByteArrayDominantColorState
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -63,19 +61,11 @@ fun ArtistDetailScreen(
     val artistSongs by viewModel.artistSongs.collectAsStateWithLifecycle()
     val albums by viewModel.artistAlbums.collectAsStateWithLifecycle()
 
-    val dominantColor by viewModel.dominantColor.collectAsStateWithLifecycle()
-    val dominantOnColor by viewModel.dominantOnColor.collectAsStateWithLifecycle()
-
     val currentPlayingSong by audioViewModel.currentPlayingSong.collectAsStateWithLifecycle()
     val mediaState by audioViewModel.mediaState.collectAsStateWithLifecycle()
 
     val density = LocalDensity.current
     val playingPillHeight: Dp by playingScreenViewModel.playingPillHeight.collectAsStateWithLifecycle()
-
-    val dominantColorState = rememberByteArrayDominantColorState(
-        defaultColor = dominantColor ?: MaterialTheme.colorScheme.background,
-        defaultOnColor = dominantOnColor ?: MaterialTheme.colorScheme.onBackground
-    )
 
     val isSelectionMode by songsViewModel.isSelectionMode.collectAsStateWithLifecycle()
     val isPlaylistSelectionMode by songsViewModel.isPlaylistSelectionMode.collectAsStateWithLifecycle()
@@ -93,13 +83,6 @@ fun ArtistDetailScreen(
 
             let2(allArtists, allSongs) { artists, songs ->
                 viewModel.loadAlbumFromMemory(artistId, artists, songs)
-                artist?.artwork?.let {
-                    dominantColorState.updateFrom(it)
-                    viewModel.updateDominantColors(
-                        dominantColorState.color,
-                        dominantColorState.onColor
-                    )
-                }
             }
         }
     }
@@ -166,9 +149,7 @@ fun ArtistDetailScreen(
                                                             isShuffled = true
                                                         )
                                                     }
-                                                },
-                                                dominantColor = dominantColor,
-                                                onDominantColor = dominantOnColor
+                                                }
                                             )
                                         }
                                     } ?: ArtistInfoSkeleton(isLandscape)
@@ -235,9 +216,7 @@ fun ArtistDetailScreen(
                                                         isShuffled = true
                                                     )
                                                 }
-                                            },
-                                            dominantColor = dominantColor,
-                                            onDominantColor = dominantOnColor
+                                            }
                                         )
                                     }
                                 } ?: ArtistInfoSkeleton(isLandscape)

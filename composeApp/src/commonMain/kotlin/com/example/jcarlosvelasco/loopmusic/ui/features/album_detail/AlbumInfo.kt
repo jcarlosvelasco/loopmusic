@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,6 +21,8 @@ import com.example.jcarlosvelasco.loopmusic.ui.theme.appTypography
 import loopmusic.composeapp.generated.resources.Res
 import loopmusic.composeapp.generated.resources.album_detail_song
 import loopmusic.composeapp.generated.resources.album_detail_songs
+import loopmusic.composeapp.generated.resources.artist_info_play
+import loopmusic.composeapp.generated.resources.artist_info_shuffle
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -28,6 +31,8 @@ fun AlbumInfo(
     albumSongs: List<Song>,
     isLandscape: Boolean,
     fullQualityArtwork: ByteArray?,
+    onPlayClick: () -> Unit,
+    onShuffleClick: () -> Unit
 ) {
     val highResAlpha by animateFloatAsState(
         targetValue = if (fullQualityArtwork != null) 1f else 0f,
@@ -77,5 +82,69 @@ fun AlbumInfo(
             overflow = TextOverflow.Ellipsis,
             style = appTypography().bodyMedium,
         )
+
+        Spacer(modifier = Modifier.height(height = 12.dp))
+
+        if (isLandscape) {
+            Column(
+                modifier = Modifier.width(250.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onPlayClick,
+                ) {
+                    Text(
+                        stringResource(Res.string.artist_info_play),
+                        style = appTypography().bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                Button(
+                    onClick = onShuffleClick,
+                ) {
+                    Text(
+                        stringResource(Res.string.artist_info_shuffle),
+                        style = appTypography().bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+        else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+            ) {
+                Button(
+                    onClick = onPlayClick,
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+                    Text(
+                        stringResource(Res.string.artist_info_play),
+                        style = appTypography().bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                Button(
+                    onClick = onShuffleClick,
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+                    Text(
+                        stringResource(Res.string.artist_info_shuffle),
+                        style = appTypography().bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
     }
 }

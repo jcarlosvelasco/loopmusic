@@ -32,9 +32,7 @@ fun ArtistInfo(
     artistAlbums: List<Album>,
     isLandscape: Boolean,
     onPlayClick: () -> Unit,
-    onShuffleClick: () -> Unit,
-    dominantColor: Color?,
-    onDominantColor: Color?,
+    onShuffleClick: () -> Unit
 ) {
     Column(
         modifier = if (isLandscape) Modifier else Modifier.fillMaxWidth(),
@@ -86,12 +84,10 @@ fun ArtistInfo(
             ) {
                 Button(
                     onClick = onPlayClick,
-                    modifier = Modifier.background(dominantColor ?: MaterialTheme.colorScheme.background),
                 ) {
                     Text(
                         stringResource(Res.string.artist_info_play),
                         style = appTypography().bodyLarge,
-                        color = onDominantColor ?: Color.Unspecified,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -99,12 +95,10 @@ fun ArtistInfo(
 
                 Button(
                     onClick = onShuffleClick,
-                    modifier = Modifier.background(dominantColor ?: MaterialTheme.colorScheme.background)
                 ) {
                     Text(
                         stringResource(Res.string.artist_info_shuffle),
                         style = appTypography().bodyLarge,
-                        color = onDominantColor ?: Color.Unspecified,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -120,13 +114,11 @@ fun ArtistInfo(
                 Button(
                     onClick = onPlayClick,
                     modifier = Modifier
-                        .weight(1f).
-                        background(dominantColor ?: MaterialTheme.colorScheme.background),
+                        .weight(1f)
                 ) {
                     Text(
                         stringResource(Res.string.artist_info_play),
                         style = appTypography().bodyLarge,
-                        color = onDominantColor ?: Color.Unspecified,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -136,12 +128,10 @@ fun ArtistInfo(
                     onClick = onShuffleClick,
                     modifier = Modifier
                         .weight(1f)
-                        .background(dominantColor ?: MaterialTheme.colorScheme.background)
                 ) {
                     Text(
                         stringResource(Res.string.artist_info_shuffle),
                         style = appTypography().bodyLarge,
-                        color = onDominantColor ?: Color.Unspecified,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

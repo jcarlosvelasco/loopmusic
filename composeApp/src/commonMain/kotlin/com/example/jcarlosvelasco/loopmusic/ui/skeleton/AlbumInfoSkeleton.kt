@@ -1,5 +1,6 @@
 package com.example.jcarlosvelasco.loopmusic.ui.skeleton
 
+import ShimmerButtonSkeleton
 import ShimmerTextSkeleton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -46,5 +47,39 @@ fun AlbumInfoSkeleton(
             textStyle = appTypography().bodyMedium,
             width = if (isLandscape) 50.dp else 150.dp
         )
+
+        Spacer(modifier = Modifier.height(height = 12.dp))
+
+        if (isLandscape) {
+            Column(
+                modifier = Modifier.width(250.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ShimmerButtonSkeleton(
+                    width = 80.dp,
+                    textStyle = appTypography().bodyLarge,
+                )
+                ShimmerButtonSkeleton(
+                    width = 80.dp,
+                    textStyle = appTypography().bodyLarge,
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+            ) {
+                ShimmerButtonSkeleton(
+                    width = 80.dp,
+                    textStyle = appTypography().bodyLarge,
+                )
+
+                ShimmerButtonSkeleton(
+                    width = 80.dp,
+                    textStyle = appTypography().bodyLarge,
+                )
+            }
+        }
     }
 }
