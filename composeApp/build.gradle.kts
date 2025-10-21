@@ -132,6 +132,14 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "release-keystore.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
     buildTypes {
         getByName("debug") {
             buildConfigField("boolean", "DEBUG_MODE", "true")
@@ -140,6 +148,7 @@ android {
             buildConfigField("boolean", "DEBUG_MODE", "false")
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

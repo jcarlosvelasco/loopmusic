@@ -1,0 +1,76 @@
+name: Android Release Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run tests
+        run: ./gradlew test --stacktrace
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release-keystore.jks
+
+      - name: Build Release APK
+        env:
+          KEYSTORE_FILE: release-keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Get version name
+        id: version
+        run: |
+          VERSION_NAME=$(grep "versionName" composeApp/build.gradle.kts | awk -F'"' '{print $2}')
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version_name }}-${{ steps.version.outputs.date }}
+          release_name: Release v${{ steps.version.outputs.version_name }}
+          draft: false
+          prerelease: false
+          body: |
+            ## LoopMusic v${{ steps.version.outputs.version_name }}
+
+            ### Changes
+            - Auto-generated release from commit ${{ github.sha }}
+
+            ### Build Info
+            - Built on: ${{ steps.version.outputs.date }}
+            - Commit: ${{ github.sha }}
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./composeApp/build/outputs/apk/release/composeApp-release.apk
+          asset_name: LoopMusic-v${{ steps.version.outputs.version_name }}.apk
+          asset_content_type: application/vnd.android.package-archive
