@@ -39,11 +39,13 @@ jobs:
 
             - name: Decode keystore
               run: |
-                  echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release-keystore.jks
+                  mkdir -p composeApp
+                  echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > composeApp/release-keystore.jks
+              shell: bash
 
             - name: Build Release APK
               env:
-                  KEYSTORE_FILE: release-keystore.jks
+                  KEYSTORE_FILE: composeApp/release-keystore.jks
                   KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
                   KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
                   KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
