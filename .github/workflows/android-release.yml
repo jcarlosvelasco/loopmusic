@@ -1,17 +1,13 @@
 name: Android Release Build
-
 on:
     push:
         branches:
             - main
-
 permissions:
     contents: write
-
 jobs:
     test-and-release:
         runs-on: ubuntu-latest
-
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -21,7 +17,6 @@ jobs:
                   mkdir -p composeApp/src/commonMain/kotlin/com/example/jcarlosvelasco/loopmusic/secrets
                   cat > composeApp/src/commonMain/kotlin/com/example/jcarlosvelasco/loopmusic/secrets/ApiKeys.kt <<'EOF'
                   package com.example.jcarlosvelasco.loopmusic.secrets
-
                   const val SPOTIFY_CLIENT_ID = "${{ secrets.SPOTIFY_CLIENT_ID }}"
                   const val SPOTIFY_CLIENT_SECRET = "${{ secrets.SPOTIFY_CLIENT_SECRET }}"
                   EOF
@@ -61,32 +56,21 @@ jobs:
                   echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
                   echo "date=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
 
-            - name: Create Release
-              id: create_release
-              uses: actions/create-release@v1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Create Release and Upload APK
+              uses: softprops/action-gh-release@v1
               with:
                   tag_name: v${{ steps.version.outputs.version_name }}-${{ steps.version.outputs.date }}
-                  release_name: Release v${{ steps.version.outputs.version_name }}
+                  name: Release v${{ steps.version.outputs.version_name }}
                   draft: false
                   prerelease: false
                   body: |
                       ## LoopMusic v${{ steps.version.outputs.version_name }}
-
                       ### Changes
                       - Auto-generated release from commit ${{ github.sha }}
-
                       ### Build Info
                       - Built on: ${{ steps.version.outputs.date }}
                       - Commit: ${{ github.sha }}
-
-            - name: Upload APK to Release
-              uses: actions/upload-release-asset@v1
+                  files: |
+                      ./composeApp/build/outputs/apk/release/composeApp-release.apk
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  upload_url: ${{ steps.create_release.outputs.upload_url }}
-                  asset_path: ./composeApp/build/outputs/apk/release/composeApp-release.apk
-                  asset_name: LoopMusic-v${{ steps.version.outputs.version_name }}.apk
-                  asset_content_type: application/vnd.android.package-archive
