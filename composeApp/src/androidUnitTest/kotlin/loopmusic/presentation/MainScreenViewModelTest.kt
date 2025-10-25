@@ -1,10 +1,10 @@
 package com.example.jcarlosvelasco.loopmusic.presentation.main
 
+import androidx.lifecycle.viewModelScope
 import app.cash.turbine.test
 import com.example.jcarlosvelasco.loopmusic.domain.model.*
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.*
 import io.mockk.*
-import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -63,14 +63,15 @@ class MainScreenViewModelTest {
 
     @After
     fun tearDown() {
-        // CRÍTICO: Avanzar el scheduler ANTES de resetear Main
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Pequeña pausa para asegurar que todo termina
-        runBlocking {
-            delay(50)
+        // CRÍTICO: Cancelar el viewModel antes de avanzar el dispatcher
+        if (::viewModel.isInitialized) {
+            viewModel.viewModelScope.cancel()
         }
 
+        // Avanzar el scheduler para procesar cancelaciones
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Reset Main dispatcher
         Dispatchers.resetMain()
     }
 
