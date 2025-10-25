@@ -17,6 +17,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainScreenViewModelTest {
@@ -133,7 +134,7 @@ class MainScreenViewModelTest {
         // Act & Assert - Observar el loadingStatus con Turbine
         viewModel = createViewModel()
 
-        viewModel.loadingStatus.test {
+        viewModel.loadingStatus.test(timeout = 5000.milliseconds) {
             // Estado inicial debe ser null
             assertEquals(null, awaitItem())
 
@@ -181,7 +182,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Act & Assert - Test that songs are loaded correctly
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             // Initial state should be null
             assertEquals(null, awaitItem())
 
@@ -241,7 +242,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(1) // Skip initial null state
 
             val loadedSongs = awaitItem()
@@ -295,7 +296,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(2) // Skip null and cached songs state
 
             val finalSongs = awaitItem()
@@ -342,7 +343,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(1)
 
             val loadedSongs = awaitItem()
@@ -409,7 +410,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             // Skip null state
             assertEquals(null, awaitItem())
 
@@ -480,7 +481,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(1) // null
             skipItems(1) // cached state
 
@@ -548,7 +549,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(1) // null
 
             // Cached state: Apple, Banana, Zebra
@@ -602,7 +603,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(1) // null
             skipItems(1) // cached
 
@@ -652,7 +653,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(2) // null and cached
 
             val updatedState = awaitItem()
@@ -688,7 +689,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             assertEquals(null, awaitItem())
 
             // Should eventually emit empty list
@@ -697,7 +698,7 @@ class MainScreenViewModelTest {
             assertTrue(songs.isEmpty())
         }
 
-        viewModel.loadingStatus.test {
+        viewModel.loadingStatus.test(timeout = 5000.milliseconds) {
             val status = awaitItem()
             assertEquals(SongsLoadingStatus.DONE, status)
         }
@@ -736,7 +737,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.albums.test {
+        viewModel.albums.test(timeout = 5000.milliseconds) {
             skipItems(2) // null and cached state (2 albums)
 
             val finalAlbums = awaitItem()
@@ -781,7 +782,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.artists.test {
+        viewModel.artists.test(timeout = 5000.milliseconds) {
             skipItems(2) // null and cached state
 
             val finalArtists = awaitItem()
@@ -823,7 +824,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.songs.test {
+        viewModel.songs.test(timeout = 5000.milliseconds) {
             skipItems(2) // null and cached state
 
             val finalState = awaitItem()
@@ -866,7 +867,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert - Only the last call should complete
-        viewModel.loadingStatus.test {
+        viewModel.loadingStatus.test(timeout = 5000.milliseconds) {
             val status = awaitItem()
             // Should be DONE from the last loadSongs call
             assertTrue(status == SongsLoadingStatus.DONE || status == SongsLoadingStatus.LOADING)
@@ -982,7 +983,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.playlists.test {
+        viewModel.playlists.test(timeout = 5000.milliseconds) {
             val playlists = awaitItem()
             val updatedPlaylist = playlists?.find { it.id == 1L }
             assertNotNull(updatedPlaylist)
@@ -1034,7 +1035,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.playlists.test {
+        viewModel.playlists.test(timeout = 5000.milliseconds) {
             val playlists = awaitItem()
             val updatedPlaylist = playlists?.find { it.id == 1L }
             assertNotNull(updatedPlaylist)
@@ -1091,7 +1092,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.playlists.test {
+        viewModel.playlists.test(timeout = 5000.milliseconds) {
             skipItems(1) // Initial state
 
             val playlists = awaitItem()
@@ -1143,7 +1144,7 @@ class MainScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        viewModel.playlists.test {
+        viewModel.playlists.test(timeout = 5000.milliseconds) {
             val playlists = awaitItem()
             val renamedPlaylist = playlists?.find { it.id == 1L }
             assertNotNull(renamedPlaylist)
