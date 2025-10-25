@@ -45,7 +45,7 @@ fun FoldersSongsScreen(
     navController: NavHostController,
     viewModel: FolderSongsViewModel = koinViewModel(),
     spacerHeight: Dp,
-    mainViewModel: MainScreenViewModel = koinViewModel(),
+    mainViewModel: MainScreenViewModel,
     songsViewModel: SongsViewModel,
     selectedScreenFeatures: Set<SCREEN_FEATURES>?,
     playingScreenViewModel: PlayingScreenViewModel,
