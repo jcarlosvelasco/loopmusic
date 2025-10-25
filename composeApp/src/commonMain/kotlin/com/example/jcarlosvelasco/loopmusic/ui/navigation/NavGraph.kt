@@ -76,7 +76,7 @@ fun CreateNavGraph(
             popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(millis)) },
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(millis)) }
         ) {
-            mediaFoldersRoute(navController)
+            mediaFoldersRoute(navController, mainScreenViewModel = mainScreenViewModel)
             homeRoute(navController, mainScreenViewModel = mainScreenViewModel)
             mainRoute(
                 navController = navController,
@@ -222,9 +222,10 @@ fun NavGraphBuilder.mainRoute(
 
 fun NavGraphBuilder.mediaFoldersRoute(
     navController: NavHostController,
+    mainScreenViewModel: MainScreenViewModel
 ) {
     composable<MediaFoldersRoute> {
-        MediaFoldersScreen(navController = navController)
+        MediaFoldersScreen(navController = navController, mainViewModel = mainScreenViewModel)
     }
 }
 
@@ -551,7 +552,8 @@ fun NavGraphBuilder.folderSongsRoute(
                 audioViewModel.setPlaylistName(playlistTitle)
                 audioViewModel.loadPlaylist(songs, song)
                 audioViewModel.playSong(song)
-            }
+            },
+            mainViewModel = mainScreenViewModel
         )
     }
 }

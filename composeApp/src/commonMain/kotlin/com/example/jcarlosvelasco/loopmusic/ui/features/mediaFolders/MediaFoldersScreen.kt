@@ -11,5 +11,5 @@ import org.koin.compose.viewmodel.koinViewModel
 expect fun MediaFoldersScreen(
     navController: NavHostController,
     viewModel: MediaFoldersScreenViewModel = koinViewModel(),
-    mainViewModel: MainScreenViewModel = koinViewModel()
+    mainViewModel: MainScreenViewModel
 )
