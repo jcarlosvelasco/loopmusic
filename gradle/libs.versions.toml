@@ -14,6 +14,7 @@ composeMultiplatform = "1.8.2"
 
 documentfile = "1.1.0"
 junit = "4.13.2"
+junitJupiterApi = "6.0.0"
 kotlin = "2.2.10"
 
 kotlinxDatetime = "0.5.0"
@@ -22,6 +23,7 @@ koin-core = "4.1.1"
 koin-annotations = "2.1.0"
 ktor = "3.3.0"
 ktorClientContentNegotiation = "3.3.0"
+mockkAndroid = "1.14.6"
 navigationCompose = "2.9.0"
 kotlinSerialization = "1.9.0"
 filekit = "0.10.0"
@@ -33,9 +35,12 @@ coil = "3.3.0"
 media3 = "1.8.0"
 
 kmpalette = "3.1.0"
+turbine = "1.2.1"
 
 [libraries]
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiterApi" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junitJupiterApi" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
@@ -55,6 +60,7 @@ koin-compose-viewmodel-navigation = { module = "io.insert-koin:koin-compose-view
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
 
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinSerialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -68,6 +74,7 @@ filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "file
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorClientContentNegotiation" }
+mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockkAndroid" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
@@ -80,6 +87,7 @@ androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.re
 
 kmpalette-core = { module = "com.kmpalette:kmpalette-core", version.ref = "kmpalette" }
 kmpalette-extensions-bytearray = { module = "com.kmpalette:extensions-bytearray", version.ref = "kmpalette" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler" }
 
 [plugins]
