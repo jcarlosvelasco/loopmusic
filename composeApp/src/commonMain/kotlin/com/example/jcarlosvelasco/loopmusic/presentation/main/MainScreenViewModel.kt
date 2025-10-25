@@ -32,7 +32,8 @@ class MainScreenViewModel(
     private val addSongsToPlaylist: AddSongsToPlaylistType,
     private val deletePlaylist: DeletePlaylistType,
     private val renamePlaylist: RenamePlaylistType,
-    private val removeSongFromPlaylist: RemoveSongFromPlaylistType
+    private val removeSongFromPlaylist: RemoveSongFromPlaylistType,
+    private val coroutineScope: CoroutineScope? = null
 ): ViewModel() {
     private val _customBarHeight = MutableStateFlow(0.dp)
     val customBarHeight = _customBarHeight.asStateFlow()
@@ -77,6 +78,9 @@ class MainScreenViewModel(
         get() = _artists.value?.filter { it.name.contains(_query.value, ignoreCase = true) }
 
 
+    private val scope: CoroutineScope
+        get() = coroutineScope ?: viewModelScope
+
     init {
         log("MainScreenViewModel", "Init")
         loadSongs()
@@ -85,7 +89,7 @@ class MainScreenViewModel(
     fun loadSongs() {
         loadSongsJob?.cancel()
 
-        loadSongsJob = viewModelScope.launch {
+        loadSongsJob = scope.launch {
             try {
                 log("MainScreenViewModel", "Loading songs with maximum parallelism...")
                 _loadingStatus.value = SongsLoadingStatus.LOADING
@@ -249,14 +253,14 @@ class MainScreenViewModel(
 
     private fun scheduleUIUpdate() {
         updateJob?.cancel()
-        updateJob = viewModelScope.launch {
+        updateJob = scope.launch {
             delay(updateDebounceMs)
             updateSongsUI()
         }
     }
 
     private fun cacheSongs(list: List<Song>) {
-        viewModelScope.launch {
+        scope.launch {
             val artworkList = list.map { it.album.artwork }
             val songsWithoutArtwork = list.map { it.copy(album = it.album.copy(artwork = null)) }
             withContext(Dispatchers.IO) {
@@ -425,7 +429,7 @@ class MainScreenViewModel(
     }
 
     fun addSongsToPlaylists(songs: Set<Song>, playlists: Set<Playlist>) {
-        viewModelScope.launch {
+        scope.launch {
             val songPaths = songs.map { it.path }.toSet()
 
             _playlists.value = _playlists.value?.map { playlist ->
@@ -463,7 +467,7 @@ class MainScreenViewModel(
             removeAll(playlists)
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.IO) {
             playlists.forEach {
                 deletePlaylist.execute(it.id)
             }
@@ -480,7 +484,7 @@ class MainScreenViewModel(
         }
 
         log("MainScreenViewModel", "Rename 1")
-        viewModelScope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.IO) {
             val playlistToRename = _playlists.value?.find { it.id == playlistId }
             log("MainScreenViewModel", "Renaming playlist '${playlistToRename?.name}' to '$newName'")
             playlistToRename?.let {
@@ -503,7 +507,7 @@ class MainScreenViewModel(
             }
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.IO) {
             songs.forEach { song ->
                 removeSongFromPlaylist.execute(song.path, playlist.id)
             }
@@ -523,7 +527,7 @@ class MainScreenViewModel(
             }
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.IO) {
             deletedPaths.forEach { path ->
                 _playlists.value?.forEach { playlist ->
                     if (!playlist.songPaths.contains(path)) {

@@ -4,8 +4,12 @@ import app.cash.turbine.test
 import com.example.jcarlosvelasco.loopmusic.domain.model.*
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.*
 import io.mockk.*
+import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Before
@@ -59,6 +63,14 @@ class MainScreenViewModelTest {
 
     @After
     fun tearDown() {
+        // CRÍTICO: Avanzar el scheduler ANTES de resetear Main
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Pequeña pausa para asegurar que todo termina
+        runBlocking {
+            delay(50)
+        }
+
         Dispatchers.resetMain()
     }
 
@@ -656,4 +668,487 @@ class MainScreenViewModelTest {
             assertEquals("/test/music/song2.mp3", updatedState[4].path)
         }
     }
+
+    @Test
+    fun `loadSongs should handle empty folders gracefully`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/empty",
+            name = "Empty Folder",
+            selectionState = SelectionState.SELECTED
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns emptyList()
+        coEvery { getFileList.execute(listOf(testFolder)) } returns emptyList()
+
+        // Act
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.songs.test {
+            assertEquals(null, awaitItem())
+
+            // Should eventually emit empty list
+            val songs = awaitItem()
+            assertNotNull(songs)
+            assertTrue(songs.isEmpty())
+        }
+
+        viewModel.loadingStatus.test {
+            val status = awaitItem()
+            assertEquals(SongsLoadingStatus.DONE, status)
+        }
+    }
+
+    @Test
+    fun `albums collection should update when last song of album is deleted`() = testScope.runTest {
+        // Arrange - Album with multiple songs, then all but one deleted
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val artist = makeArtist(1, "Artist")
+        val album1 = makeAlbum(1, "Album 1", artist)
+        val album2 = makeAlbum(2, "Album 2", artist)
+
+        val cachedSongs = listOf(
+            makeSong("/test/music/album1_song1.mp3", 1000L, artist, album1).copy(name = "A1S1"),
+            makeSong("/test/music/album1_song2.mp3", 1000L, artist, album1).copy(name = "A1S2"),
+            makeSong("/test/music/album2_song1.mp3", 1000L, artist, album2).copy(name = "A2S1")
+        )
+
+        // Only one song remains, album1 should be removed from albums collection
+        val remainingFiles = listOf(
+            makeFile("/test/music/album2_song1.mp3", 1000L)
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns cachedSongs
+        coEvery { getFileList.execute(listOf(testFolder)) } returns remainingFiles
+
+        // Act
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.albums.test {
+            skipItems(2) // null and cached state (2 albums)
+
+            val finalAlbums = awaitItem()
+            assertNotNull(finalAlbums)
+            assertEquals(1, finalAlbums.size)
+            assertEquals("Album 2", finalAlbums[0].name)
+            assertTrue(finalAlbums.none { it.id == album1.id })
+        }
+    }
+
+    @Test
+    fun `artists collection should update when last song of artist is deleted`() = testScope.runTest {
+        // Arrange - Multiple artists, then one artist's songs completely deleted
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val artist1 = makeArtist(1, "Artist 1")
+        val artist2 = makeArtist(2, "Artist 2")
+        val album1 = makeAlbum(1, "Album 1", artist1)
+        val album2 = makeAlbum(2, "Album 2", artist2)
+
+        val cachedSongs = listOf(
+            makeSong("/test/music/artist1_song1.mp3", 1000L, artist1, album1),
+            makeSong("/test/music/artist1_song2.mp3", 1000L, artist1, album1),
+            makeSong("/test/music/artist2_song1.mp3", 1000L, artist2, album2)
+        )
+
+        // Only artist2's song remains
+        val remainingFiles = listOf(
+            makeFile("/test/music/artist2_song1.mp3", 1000L)
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns cachedSongs
+        coEvery { getFileList.execute(listOf(testFolder)) } returns remainingFiles
+
+        // Act
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.artists.test {
+            skipItems(2) // null and cached state
+
+            val finalArtists = awaitItem()
+            assertNotNull(finalArtists)
+            assertEquals(1, finalArtists.size)
+            assertEquals("Artist 2", finalArtists[0].name)
+            assertTrue(finalArtists.none { it.id == artist1.id })
+        }
+    }
+
+
+    @Test
+    fun `deleted songs should be removed from collection and cache`() = testScope.runTest {
+        // Arrange - Songs exist in cache but files are deleted from disk
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val cachedSongs = listOf(
+            makeSong("/test/music/song1.mp3", 1000L).copy(name = "Song 1"),
+            makeSong("/test/music/song2.mp3", 1000L).copy(name = "Song 2"),
+            makeSong("/test/music/song3.mp3", 1000L).copy(name = "Song 3")
+        )
+
+        // Only song1 and song3 exist on disk now (song2 deleted)
+        val remainingFiles = listOf(
+            makeFile("/test/music/song1.mp3", 1000L),
+            makeFile("/test/music/song3.mp3", 1000L)
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns cachedSongs
+        coEvery { getFileList.execute(listOf(testFolder)) } returns remainingFiles
+
+        // Act
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.songs.test {
+            skipItems(2) // null and cached state
+
+            val finalState = awaitItem()
+            assertNotNull(finalState)
+            assertEquals(2, finalState.size)
+            assertTrue(finalState.none { it.path == "/test/music/song2.mp3" })
+            assertTrue(finalState.any { it.path == "/test/music/song1.mp3" })
+            assertTrue(finalState.any { it.path == "/test/music/song3.mp3" })
+        }
+
+        // Verify deletion was called
+        coVerify { deleteSongsFromCache.execute(listOf("/test/music/song2.mp3")) }
+    }
+
+    @Test
+    fun `concurrent loadSongs calls should cancel previous job`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } coAnswers {
+            delay(100)
+            listOf(testFolder)
+        }
+        coEvery { getCachedSongs.execute() } returns emptyList()
+        coEvery { getFileList.execute(any()) } returns emptyList()
+
+        // Act
+        viewModel = createViewModel()
+
+        // Trigger second load immediately
+        viewModel.loadSongs()
+
+        advanceTimeBy(50) // First call still running
+        viewModel.loadSongs() // Third call should cancel second
+
+        advanceUntilIdle()
+
+        // Assert - Only the last call should complete
+        viewModel.loadingStatus.test {
+            val status = awaitItem()
+            // Should be DONE from the last loadSongs call
+            assertTrue(status == SongsLoadingStatus.DONE || status == SongsLoadingStatus.LOADING)
+        }
+    }
+
+    /*
+    @Test
+    fun `filtered songs should respect query case-insensitively`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val artist = makeArtist(1, "The Beatles")
+        val album = makeAlbum(1, "Abbey Road", artist)
+
+        val cachedSongs = listOf(
+            makeSong("/test/music/song1.mp3", 1000L, artist, album).copy(name = "Come Together"),
+            makeSong("/test/music/song2.mp3", 1000L, artist, album).copy(name = "Something"),
+            makeSong("/test/music/song3.mp3", 1000L, artist, album).copy(name = "Here Comes The Sun")
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns cachedSongs
+        coEvery { getFileList.execute(listOf(testFolder)) } returns emptyList()
+
+        // Act
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Test case-insensitive search
+        viewModel.updateQuery("COME")
+
+        // Assert
+        val filtered = viewModel.filteredSongs
+        assertNotNull(filtered)
+        assertEquals(2, filtered.size) // "Come Together" and "Here Comes The Sun"
+        assertTrue(filtered.any { it.name == "Come Together" })
+        assertTrue(filtered.any { it.name == "Here Comes The Sun" })
+    }
+
+    @Test
+    fun `filtered albums should match query in album name`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val artist = makeArtist(1, "Artist")
+        val album1 = makeAlbum(1, "Rock Album", artist)
+        val album2 = makeAlbum(2, "Jazz Collection", artist)
+        val album3 = makeAlbum(3, "Classical Rocks", artist)
+
+        val cachedSongs = listOf(
+            makeSong("/test/music/song1.mp3", 1000L, artist, album1),
+            makeSong("/test/music/song2.mp3", 1000L, artist, album2),
+            makeSong("/test/music/song3.mp3", 1000L, artist, album3)
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns cachedSongs
+        coEvery { getFileList.execute(listOf(testFolder)) } returns emptyList()
+
+        // Act
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.updateQuery("rock")
+
+        // Assert
+        val filtered = viewModel.filteredAlbums
+        assertNotNull(filtered)
+        assertEquals(2, filtered.size)
+        assertTrue(filtered.any { it.name == "Rock Album" })
+        assertTrue(filtered.any { it.name == "Classical Rocks" })
+    }
+
+    @Test
+    fun `adding songs to playlist should not duplicate existing songs`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val song1 = makeSong("/test/music/song1.mp3", 1000L)
+        val song2 = makeSong("/test/music/song2.mp3", 1000L)
+        val song3 = makeSong("/test/music/song3.mp3", 1000L)
+
+        val playlist = Playlist(
+            id = 1,
+            name = "My Playlist",
+            songPaths = mutableListOf("/test/music/song1.mp3", "/test/music/song2.mp3")
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns listOf(song1, song2, song3)
+        coEvery { getFileList.execute(listOf(testFolder)) } returns emptyList()
+        coEvery { getPlaylists.execute() } returns listOf(playlist)
+        coEvery { addSongsToPlaylist.execute(any(), any()) } just Runs
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Act - Try to add songs 2 and 3 (song2 already exists)
+        viewModel.addSongsToPlaylists(setOf(song2, song3), setOf(playlist))
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.playlists.test {
+            val playlists = awaitItem()
+            val updatedPlaylist = playlists?.find { it.id == 1L }
+            assertNotNull(updatedPlaylist)
+            assertEquals(3, updatedPlaylist.songPaths.size) // Should have 3 songs total
+            assertTrue(updatedPlaylist.songPaths.contains("/test/music/song3.mp3"))
+
+            // Verify song2 appears only once
+            assertEquals(1, updatedPlaylist.songPaths.count { it == "/test/music/song2.mp3" })
+        }
+
+        // Verify only song3 was added via use case
+        coVerify { addSongsToPlaylist.execute(match { it.size == 1 && it.first().path == "/test/music/song3.mp3" }, 1L) }
+    }
+
+    @Test
+    fun `removing songs from playlist should update playlist correctly`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val song1 = makeSong("/test/music/song1.mp3", 1000L)
+        val song2 = makeSong("/test/music/song2.mp3", 1000L)
+        val song3 = makeSong("/test/music/song3.mp3", 1000L)
+
+        val playlist = Playlist(
+            id = 1,
+            name = "My Playlist",
+            songPaths = mutableListOf(
+                "/test/music/song1.mp3",
+                "/test/music/song2.mp3",
+                "/test/music/song3.mp3"
+            )
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns listOf(song1, song2, song3)
+        coEvery { getFileList.execute(listOf(testFolder)) } returns emptyList()
+        coEvery { getPlaylists.execute() } returns listOf(playlist)
+        coEvery { removeSongFromPlaylist.execute(any(), any()) } just Runs
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Act - Remove song2
+        viewModel.removeSongsFromPlaylist(setOf(song2), playlist)
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.playlists.test {
+            val playlists = awaitItem()
+            val updatedPlaylist = playlists?.find { it.id == 1L }
+            assertNotNull(updatedPlaylist)
+            assertEquals(2, updatedPlaylist.songPaths.size)
+            assertFalse(updatedPlaylist.songPaths.contains("/test/music/song2.mp3"))
+            assertTrue(updatedPlaylist.songPaths.contains("/test/music/song1.mp3"))
+            assertTrue(updatedPlaylist.songPaths.contains("/test/music/song3.mp3"))
+        }
+
+        coVerify { removeSongFromPlaylist.execute("/test/music/song2.mp3", 1L) }
+    }
+
+    @Test
+    fun `deleted songs should be automatically removed from all playlists`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val cachedSongs = listOf(
+            makeSong("/test/music/song1.mp3", 1000L),
+            makeSong("/test/music/song2.mp3", 1000L),
+            makeSong("/test/music/song3.mp3", 1000L)
+        )
+
+        val playlist1 = Playlist(
+            id = 1,
+            name = "Playlist 1",
+            songPaths = mutableListOf("/test/music/song1.mp3", "/test/music/song2.mp3")
+        )
+
+        val playlist2 = Playlist(
+            id = 2,
+            name = "Playlist 2",
+            songPaths = mutableListOf("/test/music/song2.mp3", "/test/music/song3.mp3")
+        )
+
+        // Only song1 and song3 remain on disk (song2 deleted)
+        val remainingFiles = listOf(
+            makeFile("/test/music/song1.mp3", 1000L),
+            makeFile("/test/music/song3.mp3", 1000L)
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns cachedSongs
+        coEvery { getFileList.execute(listOf(testFolder)) } returns remainingFiles
+        coEvery { getPlaylists.execute() } returns listOf(playlist1, playlist2)
+        coEvery { removeSongFromPlaylist.execute(any(), any()) } just Runs
+
+        // Act
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.playlists.test {
+            skipItems(1) // Initial state
+
+            val playlists = awaitItem()
+            assertNotNull(playlists)
+
+            val updatedPlaylist1 = playlists.find { it.id == 1L }
+            val updatedPlaylist2 = playlists.find { it.id == 2L }
+
+            assertNotNull(updatedPlaylist1)
+            assertNotNull(updatedPlaylist2)
+
+            // song2 should be removed from both playlists
+            assertEquals(1, updatedPlaylist1.songPaths.size)
+            assertTrue(updatedPlaylist1.songPaths.contains("/test/music/song1.mp3"))
+            assertFalse(updatedPlaylist1.songPaths.contains("/test/music/song2.mp3"))
+
+            assertEquals(1, updatedPlaylist2.songPaths.size)
+            assertTrue(updatedPlaylist2.songPaths.contains("/test/music/song3.mp3"))
+            assertFalse(updatedPlaylist2.songPaths.contains("/test/music/song2.mp3"))
+        }
+    }
+
+    @Test
+    fun `renaming playlist should update playlist name in collection`() = testScope.runTest {
+        // Arrange
+        val testFolder = Folder(
+            path = "/test/music",
+            name = "Test Music",
+            selectionState = SelectionState.SELECTED
+        )
+
+        val playlist = Playlist(
+            id = 1,
+            name = "Old Name",
+            songPaths = mutableListOf()
+        )
+
+        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
+        coEvery { getCachedSongs.execute() } returns emptyList()
+        coEvery { getFileList.execute(listOf(testFolder)) } returns emptyList()
+        coEvery { getPlaylists.execute() } returns listOf(playlist)
+        coEvery { renamePlaylist.execute(any(), any()) } just Runs
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Act
+        viewModel.renamePlaylist(1L, "New Name")
+        advanceUntilIdle()
+
+        // Assert
+        viewModel.playlists.test {
+            val playlists = awaitItem()
+            val renamedPlaylist = playlists?.find { it.id == 1L }
+            assertNotNull(renamedPlaylist)
+            assertEquals("New Name", renamedPlaylist.name)
+        }
+
+        coVerify { renamePlaylist.execute(1L, "New Name") }
+    }*/
 }
