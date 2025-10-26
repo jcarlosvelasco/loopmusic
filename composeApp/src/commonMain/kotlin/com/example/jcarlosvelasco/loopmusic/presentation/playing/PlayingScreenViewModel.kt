@@ -4,19 +4,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.jcarlosvelasco.loopmusic.domain.model.Album
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.GetFullQualityArtworkType
 import com.example.jcarlosvelasco.loopmusic.utils.log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.CoroutineScope
 
 class PlayingScreenViewModel(
     private val getFullQualityArtwork: GetFullQualityArtworkType

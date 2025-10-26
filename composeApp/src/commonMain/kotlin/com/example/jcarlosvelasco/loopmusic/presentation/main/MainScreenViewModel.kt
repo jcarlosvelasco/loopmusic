@@ -60,7 +60,7 @@ class MainScreenViewModel(
 
     private val indexByPath = mutableMapOf<String, Int>()
     private var updateJob: Job? = null
-    private val updateDebounceMs = 150L
+    private val updateDebounceMs = 300L
 
     private var loadSongsJob: Job? = null
 
@@ -110,7 +110,7 @@ class MainScreenViewModel(
     fun loadSongs() {
         loadSongsJob?.cancel()
 
-        loadSongsJob = scope.launch {
+        loadSongsJob = viewModelScope.launch {
             try {
                 log("MainScreenViewModel", "Loading songs with maximum parallelism...")
                 _loadingStatus.value = SongsLoadingStatus.LOADING
@@ -124,7 +124,6 @@ class MainScreenViewModel(
                 if (cachedSongs.isNotEmpty()) {
                     displayCachedSongs(cachedSongs)
                     log("MainScreenViewModel", "Cached songs displayed immediately")
-                    //Put songsloadingstatus to cached so user can start searching
                     _loadingStatus.value = SongsLoadingStatus.CACHED
                     artworkManager.loadArtistArtwork(_artists.value ?: emptyList())
                 }
@@ -132,17 +131,21 @@ class MainScreenViewModel(
                 val folders = foldersDeferred.await()
                 val fileListDeferred = async(Dispatchers.IO) { getFileList.execute(folders) }
 
+                playlistManager.loadPlaylists()
+
                 val filePaths = fileListDeferred.await()
                 log("MainScreenViewModel", "File paths loaded: ${filePaths.size}")
 
                 processFileDifferences(filePaths, cachedSongs)
 
-                updateSongsUI()
+                updateSongsUIImmediate()
 
-                artworkManager.loadArtistArtwork(_artists.value ?: emptyList())
+                if (cachedSongs.isEmpty()) {
+                    artworkManager.loadArtistArtwork(_artists.value ?: emptyList())
+                }
+
                 _loadingStatus.value = SongsLoadingStatus.DONE
 
-                // Artwork cleanup
                 artworkManager.cleanIfNeeded()
             } catch (e: Exception) {
                 log("MainScreenViewModel", "Error loading songs: ${e.message}")
@@ -178,23 +181,35 @@ class MainScreenViewModel(
     }
 
     private suspend fun displayCachedSongs(cachedSongs: List<Song>) {
-        collectionMutex.withLock {
-            songsCollection.clear()
-            albumsCollection.clear()
-            artistsCollection.clear()
-            indexByPath.clear()
+        val sortedSongs = cachedSongs.sortedWith(songComparator)
+        val newIndexByPath = sortedSongs.withIndex().associate { it.value.path to it.index }
+        val newAlbums = mutableMapOf<Long, Album>()
+        val newArtists = mutableMapOf<Long, Artist>()
 
-            cachedSongs.sortedWith(songComparator).forEachIndexed { index, song ->
-                songsCollection.add(song)
-                indexByPath[song.path] = index
-                addAlbumToCollection(song.album)
-                addArtistToCollection(song.artist)
+        sortedSongs.forEach { song ->
+            if (!newAlbums.containsKey(song.album.id)) {
+                newAlbums[song.album.id] = song.album
+            }
+            if (!newArtists.containsKey(song.artist.id)) {
+                newArtists[song.artist.id] = song.artist
             }
         }
 
-        updateSongsUI()
+        collectionMutex.withLock {
+            songsCollection.clear()
+            songsCollection.addAll(sortedSongs)
+            indexByPath.clear()
+            indexByPath.putAll(newIndexByPath)
+            albumsCollection.clear()
+            albumsCollection.putAll(newAlbums)
+            artistsCollection.clear()
+            artistsCollection.putAll(newArtists)
+        }
+
+        updateSongsUIImmediate()
         log("MainScreenViewModel", "Cached songs displayed in UI")
     }
+
 
     private suspend fun deleteFromCollection(paths: Set<String>) {
         if (paths.isNotEmpty()) {
@@ -214,35 +229,74 @@ class MainScreenViewModel(
     private suspend fun loadOrUpdateSongs(filePaths: List<File>, cachedSongsMap: Map<String, Song>, loadedPaths: Set<String>) {
         val parallelism = (availableProcessors() - 2).coerceAtLeast(2)
         val dispatcher = Dispatchers.IO.limitedParallelism(parallelism)
-        coroutineScope {
-            filePaths.map { file ->
-                async(dispatcher) {
-                    val cachedSong = cachedSongsMap[file.path]
-                    if (cachedSong != null) {
-                        if (file.modificationDate > cachedSong.modificationDate) {
-                            //log("MainScreenViewModel","Updating song from cache: ${file.path}")
+
+        val batchSize = 20
+        filePaths.chunked(batchSize).forEach { batch ->
+            coroutineScope {
+                batch.map { file ->
+                    async(dispatcher) {
+                        val cachedSong = cachedSongsMap[file.path]
+                        if (cachedSong != null) {
+                            if (file.modificationDate > cachedSong.modificationDate) {
+                                val newSong = readFileFromPath.execute(file)
+                                cacheSongs(listOf(newSong))
+                                newSong
+                            } else if (file.path !in loadedPaths) {
+                                cachedSong
+                            } else null
+                        } else {
                             val newSong = readFileFromPath.execute(file)
                             cacheSongs(listOf(newSong))
-                            addOrUpdateSongInCollection(newSong)
-                        } else if (file.path !in loadedPaths) {
-                            addOrUpdateSongInCollection(cachedSong)
+                            newSong
                         }
-                    } else {
-                        //log("MainScreenViewModel", "Loading song from disk: ${file.path}")
-                        val newSong = readFileFromPath.execute(file)
-                        cacheSongs(listOf(newSong))
-                        addOrUpdateSongInCollection(newSong)
+                    }
+                }.awaitAll().filterNotNull().let { songs ->
+                    if (songs.isNotEmpty()) {
+                        addSongsInBatch(songs)
                     }
                 }
-            }.awaitAll()
+            }
         }
+    }
+
+    private suspend fun addSongsInBatch(songs: List<Song>) {
+        collectionMutex.withLock {
+            songs.forEach { song ->
+                val existingIndex = indexByPath[song.path]
+                    ?: songsCollection.indexOfFirst { it.path == song.path }.also { idx ->
+                        if (idx >= 0) indexByPath[song.path] = idx
+                    }
+
+                if (existingIndex >= 0) {
+                    val old = songsCollection[existingIndex]
+                    if (old != song) {
+                        removeAlbumIfLastSong(old.album.id, song.path)
+                        removeArtistIfLastSong(old.artist.id, song.path)
+                        songsCollection.removeAt(existingIndex)
+                        indexByPath.remove(song.path)
+
+                        val insertAt = findInsertionIndex(song)
+                        songsCollection.add(insertAt, song)
+                        addAlbumToCollection(song.album)
+                        addArtistToCollection(song.artist)
+                    }
+                } else {
+                    val insertAt = findInsertionIndex(song)
+                    songsCollection.add(insertAt, song)
+                    addAlbumToCollection(song.album)
+                    addArtistToCollection(song.artist)
+                }
+            }
+            rebuildAllIndexes()
+        }
+        scheduleUIUpdate()
     }
 
     private fun scheduleUIUpdate() {
         updateJob?.cancel()
         updateJob = scope.launch {
             delay(updateDebounceMs)
-            updateSongsUI()
+            updateSongsUIImmediate()
         }
     }
 
@@ -253,48 +307,6 @@ class MainScreenViewModel(
             withContext(Dispatchers.IO) {
                 cacheSongs.execute(songsWithoutArtwork, artworkList)
             }
-        }
-    }
-
-    private suspend fun addOrUpdateSongInCollection(song: Song) {
-        var changed = false
-        collectionMutex.withLock {
-            val existingIndex = indexByPath[song.path]
-                ?: songsCollection.indexOfFirst { it.path == song.path }.also { idx ->
-                    if (idx >= 0) indexByPath[song.path] = idx
-                }
-
-            if (existingIndex >= 0) {
-                val old = songsCollection[existingIndex]
-                if (old != song) {
-                    removeAlbumIfLastSong(old.album.id, song.path)
-                    removeArtistIfLastSong(old.artist.id, song.path)
-
-                    songsCollection[existingIndex] = song
-                    songsCollection.removeAt(existingIndex)
-                    indexByPath.remove(song.path)
-
-                    val insertAt = findInsertionIndex(song)
-                    log("MainScreenViewModel", "Updating song '${song.name}' - moving from index $existingIndex to $insertAt")
-                    songsCollection.add(insertAt, song)
-                    rebuildLocalIndexes(minOf(insertAt, existingIndex))
-                    changed = true
-                }
-            } else {
-                val insertAt = findInsertionIndex(song)
-                log("MainScreenViewModel", "Adding new song '${song.name}' at index $insertAt of ${songsCollection.size}")
-
-                songsCollection.add(insertAt, song)
-                rebuildLocalIndexes(insertAt)
-
-                addAlbumToCollection(song.album)
-                addArtistToCollection(song.artist)
-                changed = true
-            }
-        }
-        if (changed) {
-            log("MainScreenViewModel", "Song collection changed, updating UI. Total songs: ${songsCollection.size}")
-            scheduleUIUpdate()
         }
     }
 
@@ -391,13 +403,26 @@ class MainScreenViewModel(
         }
     }
 
-    private suspend fun updateSongsUI() {
-        collectionMutex.withLock {
-            _songs.value = songsCollection.toList()
+    private fun rebuildAllIndexes() {
+        indexByPath.clear()
+        songsCollection.forEachIndexed { index, song ->
+            indexByPath[song.path] = index
+        }
+    }
 
-            _albums.value = albumsCollection.values.sortedWith(albumComparator)
+    private suspend fun updateSongsUIImmediate() {
+        val (songsCopy, albumsCopy, artistsCopy) = collectionMutex.withLock {
+            Triple(
+                songsCollection.toList(),
+                albumsCollection.values.toList(),
+                artistsCollection.values.toList()
+            )
+        }
 
-            _artists.value = artistsCollection.values.sortedWith(artistComparator)
+        withContext(Dispatchers.Default) {
+            _songs.value = songsCopy
+            _albums.value = albumsCopy.sortedWith(albumComparator)
+            _artists.value = artistsCopy.sortedWith(artistComparator)
         }
     }
 
