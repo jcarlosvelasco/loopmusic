@@ -4,12 +4,13 @@ import androidx.lifecycle.viewModelScope
 import app.cash.turbine.test
 import com.example.jcarlosvelasco.loopmusic.domain.model.*
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.*
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.ArtworkManagerType
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.PlaylistManagerType
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Before
@@ -38,10 +39,9 @@ class MainScreenViewModelTest {
     private val cacheArtistArtwork: CacheArtistArtworkType = mockk()
     private val getCachedArtistArtwork: GetCachedArtistArtworkType = mockk()
     private val getPlaylists: GetPlaylistsType = mockk()
-    private val addSongsToPlaylist: AddSongsToPlaylistType = mockk()
-    private val deletePlaylist: DeletePlaylistType = mockk()
-    private val renamePlaylist: RenamePlaylistType = mockk()
-    private val removeSongFromPlaylist: RemoveSongFromPlaylistType = mockk()
+    private lateinit var playlistManager: PlaylistManagerType
+    private lateinit var artworkManager: ArtworkManagerType
+
 
     @Before
     fun setup() {
@@ -60,6 +60,9 @@ class MainScreenViewModelTest {
         coEvery { getCachedArtistArtwork.execute(any()) } returns null
         coEvery { getArtistArtwork.execute(any()) } returns null
         coEvery { cacheArtistArtwork.execute(any(), any()) } just Runs
+
+        playlistManager = mockk(relaxed = true)
+        artworkManager = mockk(relaxed = true)
     }
 
     @After
@@ -84,15 +87,10 @@ class MainScreenViewModelTest {
             getFileList,
             deleteSongsFromCache,
             readFileFromPath,
-            cleanUnusedArtwork,
-            getArtistArtwork,
-            cacheArtistArtwork,
-            getCachedArtistArtwork,
-            getPlaylists,
-            addSongsToPlaylist,
-            deletePlaylist,
-            renamePlaylist,
-            removeSongFromPlaylist
+            artworkManager = artworkManager,
+            playlistManagerFactory = { scope ->
+                playlistManager
+            },
         )
     }
 
@@ -1113,44 +1111,5 @@ class MainScreenViewModelTest {
             assertTrue(updatedPlaylist2.songPaths.contains("/test/music/song3.mp3"))
             assertFalse(updatedPlaylist2.songPaths.contains("/test/music/song2.mp3"))
         }
-    }
-
-    @Test
-    fun `renaming playlist should update playlist name in collection`() = testScope.runTest {
-        // Arrange
-        val testFolder = Folder(
-            path = "/test/music",
-            name = "Test Music",
-            selectionState = SelectionState.SELECTED
-        )
-
-        val playlist = Playlist(
-            id = 1,
-            name = "Old Name",
-            songPaths = mutableListOf()
-        )
-
-        coEvery { getSelectedMediaFolders.execute() } returns listOf(testFolder)
-        coEvery { getCachedSongs.execute() } returns emptyList()
-        coEvery { getFileList.execute(listOf(testFolder)) } returns emptyList()
-        coEvery { getPlaylists.execute() } returns listOf(playlist)
-        coEvery { renamePlaylist.execute(any(), any()) } just Runs
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        // Act
-        viewModel.renamePlaylist(1L, "New Name")
-        advanceUntilIdle()
-
-        // Assert
-        viewModel.playlists.test(timeout = 5000.milliseconds) {
-            val playlists = awaitItem()
-            val renamedPlaylist = playlists?.find { it.id == 1L }
-            assertNotNull(renamedPlaylist)
-            assertEquals("New Name", renamedPlaylist.name)
-        }
-
-        coVerify { renamePlaylist.execute(1L, "New Name") }
     }*/
 }

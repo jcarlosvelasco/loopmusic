@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jcarlosvelasco.loopmusic.domain.model.*
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.*
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.ArtworkManagerType
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.PlaylistManagerType
 import com.example.jcarlosvelasco.loopmusic.utils.availableProcessors
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import kotlinx.coroutines.*
@@ -14,7 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.max
-import kotlin.random.Random
 
 
 class MainScreenViewModel(
@@ -24,16 +25,9 @@ class MainScreenViewModel(
     private val getFileList: GetFileListType,
     private val deleteSongsFromCache: DeleteSongsFromCacheType,
     private val readFileFromPath: ReadFileFromPathType,
-    private val cleanUnusedArtwork: CleanUnusedArtworkType,
-    private val getArtistArtwork: GetArtistArtworkType,
-    private val cacheArtistArtwork: CacheArtistArtworkType,
-    private val getCachedArtistArtwork: GetCachedArtistArtworkType,
-    private val getPlaylists: GetPlaylistsType,
-    private val addSongsToPlaylist: AddSongsToPlaylistType,
-    private val deletePlaylist: DeletePlaylistType,
-    private val renamePlaylist: RenamePlaylistType,
-    private val removeSongFromPlaylist: RemoveSongFromPlaylistType,
-    private val coroutineScope: CoroutineScope? = null
+    private val coroutineScope: CoroutineScope? = null,
+    playlistManagerFactory: (CoroutineScope) -> PlaylistManagerType,
+    private val artworkManager: ArtworkManagerType
 ): ViewModel() {
     private val _customBarHeight = MutableStateFlow(0.dp)
     val customBarHeight = _customBarHeight.asStateFlow()
@@ -46,9 +40,6 @@ class MainScreenViewModel(
 
     private val _artists = MutableStateFlow<List<Artist>?>(null)
     val artists = _artists.asStateFlow()
-
-    private val _playlists = MutableStateFlow<List<Playlist>?>(null)
-    val playlists = _playlists.asStateFlow()
 
     private val _loadingStatus = MutableStateFlow<SongsLoadingStatus?>(null)
     var loadingStatus = _loadingStatus.asStateFlow()
@@ -81,6 +72,10 @@ class MainScreenViewModel(
     private val scope: CoroutineScope
         get() = coroutineScope ?: viewModelScope
 
+    private val playlistManager = playlistManagerFactory(viewModelScope)
+
+    val playlists = playlistManager.playlists
+
     init {
         log("MainScreenViewModel", "Init")
         loadSongs()
@@ -105,12 +100,8 @@ class MainScreenViewModel(
                     log("MainScreenViewModel", "Cached songs displayed immediately")
                     //Put songsloadingstatus to cached so user can start searching
                     _loadingStatus.value = SongsLoadingStatus.CACHED
-                    getArtistsArtwork()
+                    artworkManager.loadArtistArtwork(_artists.value ?: emptyList())
                 }
-
-                // Load playlists
-                val playlistsDeferred = async(Dispatchers.IO) { getPlaylists.execute() }
-                _playlists.value = playlistsDeferred.await()
 
                 val folders = foldersDeferred.await()
                 val fileListDeferred = async(Dispatchers.IO) { getFileList.execute(folders) }
@@ -122,44 +113,14 @@ class MainScreenViewModel(
 
                 updateSongsUI()
 
-                getArtistsArtwork()
+                artworkManager.loadArtistArtwork(_artists.value ?: emptyList())
                 _loadingStatus.value = SongsLoadingStatus.DONE
 
                 // Artwork cleanup
-                if (Random.nextInt(100) < 5) {
-                    log("MainScreenViewModel", "running artwork GC (5% chance)...")
-                    withContext(Dispatchers.IO) {
-                        cleanUnusedArtwork.execute()
-                    }
-                }
+                artworkManager.cleanIfNeeded()
             } catch (e: Exception) {
                 log("MainScreenViewModel", "Error loading songs: ${e.message}")
                 _loadingStatus.value = SongsLoadingStatus.ERROR
-            }
-        }
-    }
-
-    private suspend fun getArtistsArtwork() {
-        log("MainScreenViewModel", "Loading artist artwork...")
-        _artists.value?.let { artists ->
-            artists.forEach { artist ->
-                log("MainScreenViewModel", "Loading artwork for ${artist.name}")
-                if (artist.artwork == null) {
-                    val cachedArtwork = getCachedArtistArtwork.execute(artist.name)
-                    if (cachedArtwork == null) {
-                        log("MainScreenViewModel", "No cached artwork for ${artist.name}")
-                        val artwork = getArtistArtwork.execute(artist.name)
-                        artwork?.let {
-                            log("MainScreenViewModel", "Found artwork for ${artist.name}")
-                            artist.artwork = it
-                            cacheArtistArtwork.execute(artist.name, it)
-                        }
-                    }
-                    else {
-                        log("MainScreenViewModel", "Found cached artwork for ${artist.name}")
-                        artist.artwork = cachedArtwork
-                    }
-                }
             }
         }
     }
@@ -212,7 +173,7 @@ class MainScreenViewModel(
     private suspend fun deleteFromCollection(paths: Set<String>) {
         if (paths.isNotEmpty()) {
             log("MainScreenViewModel", "Deleting ${paths.size} songs from loaded songs...")
-            removeDeletedSongsFromPlaylists(paths)
+            playlistManager.removeDeletedSongsFromPlaylists(paths)
             removePathsFromCollection(paths)
         }
     }
@@ -422,119 +383,10 @@ class MainScreenViewModel(
         _query.value = value
     }
 
-    fun addPlaylistToCollection(playlist: Playlist) {
-        _playlists.value = _playlists.value?.toMutableList()?.apply {
-            add(playlist)
-        }
-    }
+    fun addSongsToPlaylists(songs: Set<Song>, playlists: Set<Playlist>) { playlistManager.addSongsToPlaylists(songs, playlists) }
+    fun removePlaylists(playlists: Set<Playlist>) { playlistManager.removePlaylists(playlists) }
 
-    fun addSongsToPlaylists(songs: Set<Song>, playlists: Set<Playlist>) {
-        scope.launch {
-            val songPaths = songs.map { it.path }.toSet()
-
-            _playlists.value = _playlists.value?.map { playlist ->
-                if (playlist in playlists) {
-                    val newPaths = songPaths.filterNot { it in playlist.songPaths }
-                    if (newPaths.isNotEmpty()) {
-                        log("MainScreenViewModel", "Adding ${newPaths.size} new songs to playlist '${playlist.name}'")
-                        playlist.copy(
-                            songPaths = (playlist.songPaths + newPaths).toMutableList()
-                        )
-                    } else {
-                        log("MainScreenViewModel", "All songs already exist in playlist '${playlist.name}'")
-                        playlist
-                    }
-                } else {
-                    playlist
-                }
-            }
-
-            withContext(Dispatchers.IO) {
-                playlists.forEach { playlist ->
-                    val existingPaths = _playlists.value?.find { it.id == playlist.id }?.songPaths ?: emptyList()
-                    val newSongs = songs.filter { it.path !in existingPaths }
-
-                    if (newSongs.isNotEmpty()) {
-                        addSongsToPlaylist.execute(newSongs.toSet(), playlist.id)
-                    }
-                }
-            }
-        }
-    }
-
-    fun removePlaylists(playlists: Set<Playlist>) {
-        _playlists.value = _playlists.value?.toMutableList()?.apply {
-            removeAll(playlists)
-        }
-
-        scope.launch(Dispatchers.IO) {
-            playlists.forEach {
-                deletePlaylist.execute(it.id)
-            }
-        }
-    }
-
-    fun renamePlaylist(playlistId: Long, newName: String) {
-        _playlists.value = _playlists.value?.map { playlist ->
-            if (playlist.id == playlistId) {
-                playlist.copy(name = newName)
-            } else {
-                playlist
-            }
-        }
-
-        log("MainScreenViewModel", "Rename 1")
-        scope.launch(Dispatchers.IO) {
-            val playlistToRename = _playlists.value?.find { it.id == playlistId }
-            log("MainScreenViewModel", "Renaming playlist '${playlistToRename?.name}' to '$newName'")
-            playlistToRename?.let {
-                renamePlaylist.execute(playlistId, newName)
-            }
-        }
-    }
-
-    fun removeSongsFromPlaylist(songs: Set<Song>, playlist: Playlist) {
-        log("MainScreenViewModel", "Removing ${songs.size} songs from playlist '${playlist.name}'")
-        val songPathsToRemove = songs.map { it.path }.toSet()
-
-        _playlists.value = _playlists.value?.map { pl ->
-            if (pl.id == playlist.id) {
-                pl.copy(
-                    songPaths = pl.songPaths.filterNot { it in songPathsToRemove }.toMutableList()
-                )
-            } else {
-                pl
-            }
-        }
-
-        scope.launch(Dispatchers.IO) {
-            songs.forEach { song ->
-                removeSongFromPlaylist.execute(song.path, playlist.id)
-            }
-        }
-    }
-
-    private fun removeDeletedSongsFromPlaylists(deletedPaths: Set<String>) {
-        _playlists.value = _playlists.value?.map { playlist ->
-            val originalSize = playlist.songPaths.size
-            val updatedPaths = playlist.songPaths.filterNot { it in deletedPaths }
-
-            if (updatedPaths.size != originalSize) {
-                log("MainScreenViewModel", "Removed ${originalSize - updatedPaths.size} deleted songs from playlist '${playlist.name}'")
-                playlist.copy(songPaths = updatedPaths.toMutableList())
-            } else {
-                playlist
-            }
-        }
-
-        scope.launch(Dispatchers.IO) {
-            deletedPaths.forEach { path ->
-                _playlists.value?.forEach { playlist ->
-                    if (!playlist.songPaths.contains(path)) {
-                        removeSongFromPlaylist.execute(path, playlist.id)
-                    }
-                }
-            }
-        }
-    }
+    fun renamePlaylist(playlistId: Long, newName: String) { playlistManager.renamePlaylist(playlistId, newName) }
+    fun addPlaylistToCollection(playlist: Playlist) { playlistManager.addPlaylistToCollection(playlist) }
+    fun removeSongsFromPlaylist(songs: Set<Song>, playlist: Playlist) { playlistManager.removeSongsFromPlaylist(songs, playlist) }
 }

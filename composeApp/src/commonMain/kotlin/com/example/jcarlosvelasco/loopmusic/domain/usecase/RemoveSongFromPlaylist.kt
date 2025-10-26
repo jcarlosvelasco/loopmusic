@@ -10,6 +10,6 @@ class RemoveSongFromPlaylist(
     private val repo: RemoveSongFromPlaylistRepoType
 ): RemoveSongFromPlaylistType {
     override suspend fun execute(songPath: String, playlistId: Long) {
-        return repo.removeSongFromPlaylist(songPath, playlistId)
+        repo.removeSongFromPlaylist(songPath, playlistId)
     }
 }

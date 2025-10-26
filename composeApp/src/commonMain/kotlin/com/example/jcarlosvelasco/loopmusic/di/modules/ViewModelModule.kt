@@ -14,6 +14,10 @@ import com.example.jcarlosvelasco.loopmusic.presentation.folder_songs.FolderSong
 import com.example.jcarlosvelasco.loopmusic.presentation.folders.FoldersScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.home.HomeScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.main.MainScreenViewModel
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.ArtworkManager
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.ArtworkManagerType
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.PlaylistManager
+import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.PlaylistManagerType
 import com.example.jcarlosvelasco.loopmusic.presentation.mediaFolders.MediaFoldersScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.navigator.NavigatorViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.playing.PlayingScreenViewModel
@@ -23,6 +27,7 @@ import com.example.jcarlosvelasco.loopmusic.presentation.playlists.PlaylistsView
 import com.example.jcarlosvelasco.loopmusic.presentation.search.SearchScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.songs.SongsViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.theme.ThemeViewModel
+import kotlinx.coroutines.CoroutineScope
 import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Singleton
@@ -62,6 +67,41 @@ class ViewModelModule {
     }
 
     @Singleton
+    fun getPlaylistManager(
+        getPlaylists: GetPlaylistsType,
+        deletePlaylist: DeletePlaylistType,
+        renamePlaylist: RenamePlaylistType,
+        removeSongFromPlaylist: RemoveSongFromPlaylistType,
+        addSongsToPlaylist: AddSongsToPlaylistType,
+    ): (CoroutineScope) -> PlaylistManagerType {
+        return { scope ->
+            PlaylistManager(
+                getPlaylists = getPlaylists,
+                deletePlaylist = deletePlaylist,
+                renamePlaylist = renamePlaylist,
+                removeSongFromPlaylist = removeSongFromPlaylist,
+                addSongsToPlaylist = addSongsToPlaylist,
+                scope = scope
+            )
+        }
+    }
+
+    @Singleton
+    fun getArtworkManager(
+        getArtistArtwork: GetArtistArtworkType,
+        getCachedArtistArtwork: GetCachedArtistArtworkType,
+        cacheArtistArtwork: CacheArtistArtworkType,
+        cleanUnusedArtwork: CleanUnusedArtworkType,
+    ): ArtworkManagerType {
+        return ArtworkManager(
+            getArtistArtwork = getArtistArtwork,
+            cacheArtistArtwork = cacheArtistArtwork,
+            getCachedArtistArtwork = getCachedArtistArtwork,
+            cleanUnusedArtwork = cleanUnusedArtwork
+        )
+    }
+
+    @Singleton
     @KoinViewModel
     fun getMainScreenViewModel(
         getSelectedMediaFolders: GetSelectedMediaFoldersType,
@@ -70,15 +110,8 @@ class ViewModelModule {
         getFileList: GetFileListType,
         deleteSongsFromCache: DeleteSongsFromCacheType,
         readFileFromPath: ReadFileFromPathType,
-        cleanUnusedArtwork: CleanUnusedArtworkType,
-        cacheArtistArtwork: CacheArtistArtworkType,
-        getArtistArtwork: GetArtistArtworkType,
-        getCachedArtistArtworkType: GetCachedArtistArtworkType,
-        getPlaylists: GetPlaylistsType,
-        addSongsToPlaylistType: AddSongsToPlaylistType,
-        deletePlaylist: DeletePlaylistType,
-        renamePlaylistType: RenamePlaylistType,
-        removeSongFromPlaylistType: RemoveSongFromPlaylistType
+        playlistManagerFactory: (CoroutineScope) -> PlaylistManagerType,
+        artworkManager: ArtworkManagerType
     ): MainScreenViewModel {
         return MainScreenViewModel(
             getSelectedMediaFolders = getSelectedMediaFolders,
@@ -87,15 +120,8 @@ class ViewModelModule {
             getFileList = getFileList,
             deleteSongsFromCache = deleteSongsFromCache,
             readFileFromPath = readFileFromPath,
-            cleanUnusedArtwork = cleanUnusedArtwork,
-            cacheArtistArtwork = cacheArtistArtwork,
-            getArtistArtwork = getArtistArtwork,
-            getCachedArtistArtwork = getCachedArtistArtworkType,
-            getPlaylists = getPlaylists,
-            addSongsToPlaylist = addSongsToPlaylistType,
-            deletePlaylist = deletePlaylist,
-            renamePlaylist = renamePlaylistType,
-            removeSongFromPlaylist = removeSongFromPlaylistType
+            playlistManagerFactory = playlistManagerFactory,
+            artworkManager = artworkManager
         )
     }
 
