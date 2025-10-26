@@ -77,7 +77,7 @@ fun CreateNavGraph(
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(millis)) }
         ) {
             mediaFoldersRoute(navController, mainScreenViewModel = mainScreenViewModel)
-            homeRoute(navController, mainScreenViewModel = mainScreenViewModel)
+            homeRoute(navController, mainScreenViewModel = mainScreenViewModel, audioViewModel = audioViewModel)
             mainRoute(
                 navController = navController,
                 songListState = songsListState,
@@ -87,7 +87,9 @@ fun CreateNavGraph(
                 artistsListState = artistsListState,
                 mainScreenViewModel = mainScreenViewModel,
                 playlistsViewModel = playlistsViewModel,
-                playlistSelectionViewModel = playlistSelectionViewModel
+                playlistSelectionViewModel = playlistSelectionViewModel,
+                audioViewModel = audioViewModel,
+                playingScreenViewModel = playingScreenViewModel
             )
             settingsRoute(navController)
             playingRoute(
@@ -129,7 +131,7 @@ fun CreateNavGraph(
                 audioViewModel = audioViewModel,
                 playingScreenViewModel = playingScreenViewModel
             )
-            searchRoute(navController, mainScreenViewModel = mainScreenViewModel)
+            searchRoute(navController, mainScreenViewModel = mainScreenViewModel, audioViewModel = audioViewModel)
             artistDetailRoute(
                 navController = navController,
                 featuresViewModel = featuresViewModel,
@@ -182,6 +184,7 @@ fun CreateNavGraph(
 fun NavGraphBuilder.homeRoute(
     navController: NavHostController,
     mainScreenViewModel: MainScreenViewModel,
+    audioViewModel: AudioViewModel
 ) {
     composable<HomeRoute> {
         val loadingStatus by mainScreenViewModel.loadingStatus.collectAsStateWithLifecycle()
@@ -189,7 +192,8 @@ fun NavGraphBuilder.homeRoute(
         HomeScreen(
             loadingStatus = loadingStatus,
             navController = navController,
-            spacerHeight = 0.dp
+            spacerHeight = 0.dp,
+            audioViewModel = audioViewModel
         )
     }
 }
@@ -204,6 +208,8 @@ fun NavGraphBuilder.mainRoute(
     mainScreenViewModel: MainScreenViewModel,
     playlistSelectionViewModel: PlaylistSelectionViewModel,
     playlistsViewModel: PlaylistsViewModel,
+    audioViewModel: AudioViewModel,
+    playingScreenViewModel: PlayingScreenViewModel
 ) {
     composable<MainRoute> {
         MainScreen(
@@ -215,7 +221,9 @@ fun NavGraphBuilder.mainRoute(
             artistsListState = artistsListState,
             viewModel = mainScreenViewModel,
             playlistSelectionViewModel = playlistSelectionViewModel,
-            playlistsViewModel = playlistsViewModel
+            playlistsViewModel = playlistsViewModel,
+            audioViewModel = audioViewModel,
+            playingScreenViewModel = playingScreenViewModel
         )
     }
 }
@@ -476,7 +484,8 @@ fun NavGraphBuilder.foldersRoute(
 
 fun NavGraphBuilder.searchRoute(
     navController: NavHostController,
-    mainScreenViewModel: MainScreenViewModel
+    mainScreenViewModel: MainScreenViewModel,
+    audioViewModel: AudioViewModel
 ) {
     composable<SearchRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<AlbumsRoute>()
@@ -496,6 +505,7 @@ fun NavGraphBuilder.searchRoute(
             onUpdateQuery = mainScreenViewModel::updateQuery,
             loadingStatus = loadingStatus,
             query = query,
+            audioViewModel = audioViewModel
         )
     }
 }

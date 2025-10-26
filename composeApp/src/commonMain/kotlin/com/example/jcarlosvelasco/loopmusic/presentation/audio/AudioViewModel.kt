@@ -203,7 +203,7 @@ class AudioViewModel(
         progressJob = CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
             try {
                 while (isActive) {
-                    log("AudioViewModel", "Progress updates")
+                    //log("AudioViewModel", "Progress updates")
 
                     val duration = currentPlayingSong.value?.duration?.toFloat() ?: 0f
                     if (duration <= 0f) {
@@ -215,19 +215,19 @@ class AudioViewModel(
                         continue
                     }
 
-                    log("AudioViewModel", "Progress updates: ${duration - currentPosition.value}")
+                    //log("AudioViewModel", "Progress updates: ${duration - currentPosition.value}")
 
                     val realState = getCurrentPlayerState.execute()
                     if (realState != mediaState.value) {
                         _mediaState.value = realState
                     }
 
-                    log("AudioViewModel", "real state: ${realState.toString()}")
+                    //log("AudioViewModel", "real state: ${realState.toString()}")
 
                     val position = getCurrentMediaPlayerPosition.execute()
                         .coerceIn(0f, duration)
 
-                    log("AudioViewModel", "position: $position")
+                    //log("AudioViewModel", "position: $position")
 
                     _currentPosition.value = position
                     updateElapsed.execute(position.toLong(), true)

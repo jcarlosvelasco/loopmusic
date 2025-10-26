@@ -63,7 +63,9 @@ fun PlayingScreen(
     )
 
     LaunchedEffect(currentPlayingSong) {
+        log("PlayingScreen", "Current playing song: $currentPlayingSong")
         currentPlayingSong?.let { currentSong ->
+            log("PlayingScreen", "previousCurrentPlayingAlbum: $previousCurrentPlayingAlbum")
             if (previousCurrentPlayingAlbum == null) {
                 if (viewModel.lastProcessedAlbum?.name != currentSong.album.name ) {
                     log("PlayingScreen", "First time playing song")
@@ -103,7 +105,7 @@ fun PlayingScreen(
     }
 
     WithOrientation { isLandscape ->
-        Scaffold() {
+        Scaffold {
             Column(
                 modifier = Modifier
                     .fillMaxSize()

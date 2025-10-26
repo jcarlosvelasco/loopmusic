@@ -46,7 +46,7 @@ fun SearchScreen(
     query: String,
     onUpdateQuery: (String) -> Unit,
     viewModel: SearchScreenViewModel = koinViewModel(),
-    audioViewModel: AudioViewModel = koinViewModel()
+    audioViewModel: AudioViewModel
 ) {
     val isTextFieldFocused by viewModel.isTextFieldFocused.collectAsStateWithLifecycle()
     val isSongsButtonActive by viewModel.isSongsButtonActive.collectAsStateWithLifecycle()

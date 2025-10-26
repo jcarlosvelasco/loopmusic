@@ -36,7 +36,7 @@ fun HomeScreen(
     navController: NavHostController,
     loadingStatus: SongsLoadingStatus?,
     viewModel: HomeScreenViewModel = koinViewModel(),
-    audioViewModel: AudioViewModel = koinViewModel(),
+    audioViewModel: AudioViewModel,
     spacerHeight: Dp
 ) {
     val playlist by audioViewModel.playlist.collectAsStateWithLifecycle()

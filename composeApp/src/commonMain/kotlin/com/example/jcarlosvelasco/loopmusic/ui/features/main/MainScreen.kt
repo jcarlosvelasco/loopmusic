@@ -41,8 +41,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun MainScreen(
     navController: NavHostController,
     viewModel: MainScreenViewModel,
-    audioViewModel: AudioViewModel = koinViewModel(),
-    playingScreenViewModel: PlayingScreenViewModel = koinViewModel(),
+    audioViewModel: AudioViewModel,
+    playingScreenViewModel: PlayingScreenViewModel,
     featuresViewModel: FeaturesViewModel = koinViewModel(),
     songsListState: LazyListState,
     albumsListState: LazyListState,
@@ -98,7 +98,8 @@ fun MainScreen(
                 NavigationTab.HOME -> HomeScreen(
                     navController,
                     loadingStatus,
-                    spacerHeight = spacerHeight
+                    spacerHeight = spacerHeight,
+                    audioViewModel = audioViewModel
                 )
 
                 NavigationTab.SONGS -> SongsScreen(
@@ -144,7 +145,8 @@ fun MainScreen(
                     query = query,
                     filteredSongs = filteredSongs,
                     filteredAlbums = filteredAlbums,
-                    filteredArtists = filteredArtists
+                    filteredArtists = filteredArtists,
+                    audioViewModel = audioViewModel
                 )
 
                 NavigationTab.ARTISTS -> ArtistsScreen(

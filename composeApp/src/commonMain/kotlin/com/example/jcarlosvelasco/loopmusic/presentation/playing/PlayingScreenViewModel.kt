@@ -10,11 +10,13 @@ import com.example.jcarlosvelasco.loopmusic.domain.usecase.GetFullQualityArtwork
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineScope
 
 class PlayingScreenViewModel(
     private val getFullQualityArtwork: GetFullQualityArtworkType
@@ -35,6 +37,9 @@ class PlayingScreenViewModel(
 
     private val isMenuExpanded = MutableStateFlow(false)
     val isMenuExpandedFlow = isMenuExpanded.asStateFlow()
+
+    // Use a custom CoroutineScope that survives app restarts
+    private val customScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     fun updateDominantColors(color: Color, onColor: Color) {
         _dominantColor.value = color
@@ -63,7 +68,7 @@ class PlayingScreenViewModel(
     }
 
     fun getFullQualityArtwork(songPath: String): ByteArray? {
-        viewModelScope.launch {
+        customScope.launch {
             log("PlayingScreenViewModel", "Loading full quality artwork for: $songPath")
             _fullQualityArtwork.value = null
             val value = withContext(Dispatchers.IO) {
