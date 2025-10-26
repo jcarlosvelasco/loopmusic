@@ -134,7 +134,7 @@ class MainScreenViewModelTest {
 
         viewModel.loadingStatus.test(timeout = 5000.milliseconds) {
             // Estado inicial debe ser null
-            assertEquals(null, awaitItem())
+            assertEquals<SongsLoadingStatus?>(null, awaitItem())
 
             // Luego debe pasar a LOADING
             assertEquals(SongsLoadingStatus.LOADING, awaitItem())
@@ -182,7 +182,7 @@ class MainScreenViewModelTest {
         // Act & Assert - Test that songs are loaded correctly
         viewModel.songs.test(timeout = 5000.milliseconds) {
             // Initial state should be null
-            assertEquals(null, awaitItem())
+            assertEquals<List<Song>?>(null, awaitItem())
 
             // After loadSongs completes, should contain the test songs
             val loadedSongs = awaitItem()
@@ -410,7 +410,7 @@ class MainScreenViewModelTest {
         // Assert
         viewModel.songs.test(timeout = 5000.milliseconds) {
             // Skip null state
-            assertEquals(null, awaitItem())
+            assertEquals<List<Song>?>(null, awaitItem())
 
             // First emission: cached song with original metadata
             val cachedState = awaitItem()
@@ -688,7 +688,7 @@ class MainScreenViewModelTest {
 
         // Assert
         viewModel.songs.test(timeout = 5000.milliseconds) {
-            assertEquals(null, awaitItem())
+            assertEquals<List<Song>?>(null, awaitItem())
 
             // Should eventually emit empty list
             val songs = awaitItem()

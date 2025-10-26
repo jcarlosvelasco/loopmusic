@@ -138,9 +138,9 @@ fun MainScreen(
                     loadingStatus = loadingStatus,
                     onUpdateQuery = viewModel::updateQuery,
                     query = query,
-                    filteredSongs = viewModel.filteredSongs,
-                    filteredAlbums = viewModel.filteredAlbums,
-                    filteredArtists = viewModel.filteredArtists,
+                    filteredSongs = viewModel.filteredSongs.value,
+                    filteredAlbums = viewModel.filteredAlbums.value,
+                    filteredArtists = viewModel.filteredArtists.value,
                 )
 
                 NavigationTab.ARTISTS -> ArtistsScreen(

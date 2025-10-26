@@ -12,7 +12,12 @@ import com.example.jcarlosvelasco.loopmusic.utils.availableProcessors
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.max
@@ -59,14 +64,35 @@ class MainScreenViewModel(
 
     private var loadSongsJob: Job? = null
 
-    val filteredSongs: List<Song>?
-        get() = _songs.value?.filter { it.name.contains(_query.value, ignoreCase = true) || it.album.name.contains(_query.value, ignoreCase = true) }
+    @OptIn(FlowPreview::class)
+    val filteredSongs: StateFlow<List<Song>?> = combine(songs, query) { songList, searchQuery ->
+        if (searchQuery.isBlank()) {
+            songList
+        } else {
+            songList?.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.album.name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+        .debounce(150L)
+        .stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val filteredAlbums: List<Album>?
-        get() = _albums.value?.filter { it.name.contains(_query.value, ignoreCase = true) }
+    @OptIn(FlowPreview::class)
+    val filteredAlbums: StateFlow<List<Album>?> = combine(albums, query) { albumList, searchQuery ->
+        if (searchQuery.isBlank()) albumList
+        else albumList?.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+        .debounce(150L)
+        .stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val filteredArtists: List<Artist>?
-        get() = _artists.value?.filter { it.name.contains(_query.value, ignoreCase = true) }
+    @OptIn(FlowPreview::class)
+    val filteredArtists: StateFlow<List<Artist>?> = combine(artists, query) { artistList, searchQuery ->
+        if (searchQuery.isBlank()) artistList
+        else artistList?.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+        .debounce(150L)
+        .stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
     private val scope: CoroutineScope

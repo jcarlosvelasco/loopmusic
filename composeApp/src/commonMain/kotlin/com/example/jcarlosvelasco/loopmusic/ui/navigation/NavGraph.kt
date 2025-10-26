@@ -486,12 +486,12 @@ fun NavGraphBuilder.searchRoute(
         SearchScreen(
             navController = navController,
             fromOthers = route.fromOthers,
-            filteredSongs = mainScreenViewModel.filteredSongs,
-            filteredAlbums = mainScreenViewModel.filteredAlbums,
+            filteredSongs = mainScreenViewModel.filteredSongs.value,
+            filteredAlbums = mainScreenViewModel.filteredAlbums.value,
             onUpdateQuery = mainScreenViewModel::updateQuery,
             loadingStatus = loadingStatus,
             query = query,
-            filteredArtists = mainScreenViewModel.filteredArtists,
+            filteredArtists = mainScreenViewModel.filteredArtists.value,
         )
     }
 }
