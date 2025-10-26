@@ -483,15 +483,19 @@ fun NavGraphBuilder.searchRoute(
         val loadingStatus by mainScreenViewModel.loadingStatus.collectAsStateWithLifecycle()
         val query by mainScreenViewModel.query.collectAsStateWithLifecycle()
 
+        val filteredSongs by mainScreenViewModel.filteredSongs.collectAsStateWithLifecycle()
+        val filteredAlbums by mainScreenViewModel.filteredAlbums.collectAsStateWithLifecycle()
+        val filteredArtists by mainScreenViewModel.filteredArtists.collectAsStateWithLifecycle()
+
         SearchScreen(
             navController = navController,
             fromOthers = route.fromOthers,
-            filteredSongs = mainScreenViewModel.filteredSongs.value,
-            filteredAlbums = mainScreenViewModel.filteredAlbums.value,
+            filteredSongs = filteredSongs,
+            filteredAlbums = filteredAlbums,
+            filteredArtists = filteredArtists,
             onUpdateQuery = mainScreenViewModel::updateQuery,
             loadingStatus = loadingStatus,
             query = query,
-            filteredArtists = mainScreenViewModel.filteredArtists.value,
         )
     }
 }

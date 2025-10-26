@@ -81,6 +81,10 @@ fun MainScreen(
     val isPlaylistSelectionMode by songsViewModel.isPlaylistSelectionMode.collectAsStateWithLifecycle()
     val isPSelectionMode by playlistSelectionViewModel.isSelectionMode.collectAsStateWithLifecycle()
 
+    val filteredSongs by viewModel.filteredSongs.collectAsStateWithLifecycle()
+    val filteredAlbums by viewModel.filteredAlbums.collectAsStateWithLifecycle()
+    val filteredArtists by viewModel.filteredArtists.collectAsStateWithLifecycle()
+
     val spacerHeight = playingPillHeight + customNavigationBarHeight
 
     Scaffold {
@@ -138,9 +142,9 @@ fun MainScreen(
                     loadingStatus = loadingStatus,
                     onUpdateQuery = viewModel::updateQuery,
                     query = query,
-                    filteredSongs = viewModel.filteredSongs.value,
-                    filteredAlbums = viewModel.filteredAlbums.value,
-                    filteredArtists = viewModel.filteredArtists.value,
+                    filteredSongs = filteredSongs,
+                    filteredAlbums = filteredAlbums,
+                    filteredArtists = filteredArtists
                 )
 
                 NavigationTab.ARTISTS -> ArtistsScreen(
