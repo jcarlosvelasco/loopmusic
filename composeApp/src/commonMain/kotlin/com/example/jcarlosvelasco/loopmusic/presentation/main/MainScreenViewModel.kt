@@ -98,7 +98,7 @@ class MainScreenViewModel(
     private val scope: CoroutineScope
         get() = coroutineScope ?: viewModelScope
 
-    private val playlistManager = playlistManagerFactory(viewModelScope)
+    private val playlistManager = playlistManagerFactory(scope)
 
     val playlists = playlistManager.playlists
 
