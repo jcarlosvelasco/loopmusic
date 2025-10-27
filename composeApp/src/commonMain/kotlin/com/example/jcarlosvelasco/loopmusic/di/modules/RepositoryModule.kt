@@ -321,4 +321,7 @@ class RepositoryModule {
 
     @Single
     fun getRemoveSongFromPlaylistRepoType(repo: PlaylistRepository): RemoveSongFromPlaylistRepoType = repo
+
+    @Single
+    fun getCacheAlbumArtworkRepoType(repo: AlbumRepository): CacheAlbumArtworkRepoType = repo
 }

@@ -73,7 +73,7 @@ class SongRepository(
             val bytes = artworkList[i]
 
             if (!hash.isNullOrBlank() && bytes != null) {
-                files.storeImageInFolder(bytes, hash)
+                files.storeImageInFolder(bytes, hash, isExternal = false)
             }
         }
 
@@ -100,7 +100,7 @@ class SongRepository(
         }
         return songs.map { song ->
             val hash = song.album.artworkHash
-            val artwork = if (!hash.isNullOrBlank()) files.readCachedArtworkBytes(hash, fromSongs = true) else null
+            val artwork = if (!hash.isNullOrBlank()) files.readCachedArtworkBytes(hash, fromSongs = true, isExternal = false) else null
 
             if (artwork != null) {
                 //Add artwork to song album

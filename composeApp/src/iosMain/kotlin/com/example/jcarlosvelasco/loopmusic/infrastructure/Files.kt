@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import platform.Foundation.*
 
 class Files: FilesInfrType {
+    private val externalCacheFolderName = "artwork_cache_external"
     private val cacheFolderName = "artwork_cache"
     private val artistCacheFolderName = "artist_cache"
 
@@ -68,7 +69,7 @@ class Files: FilesInfrType {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun getBaseDirectory(fromSongs: Boolean): NSURL {
+    private fun getBaseDirectory(fromSongs: Boolean, isExternal: Boolean = false): NSURL {
         val paths = NSSearchPathForDirectoriesInDomains(
             NSCachesDirectory,
             NSUserDomainMask,
@@ -76,7 +77,8 @@ class Files: FilesInfrType {
         )
 
         val basePath: String = (paths.firstOrNull() as? String) ?: NSTemporaryDirectory()
-        val folderPath = if (fromSongs) "$basePath/$cacheFolderName" else "$basePath/$artistCacheFolderName"
+
+        val folderPath = if (fromSongs && isExternal) "$basePath/$externalCacheFolderName" else if (fromSongs) "$basePath/$cacheFolderName" else "$basePath/$artistCacheFolderName"
 
         val fileManager = NSFileManager.defaultManager
         if (!fileManager.fileExistsAtPath(folderPath)) {
@@ -87,8 +89,8 @@ class Files: FilesInfrType {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    override suspend fun storeImageInFolder(artwork: ByteArray, songIdentifier: String) {
-        val fileURL = getBaseDirectory(true).URLByAppendingPathComponent("$songIdentifier.jpg")
+    override suspend fun storeImageInFolder(artwork: ByteArray, songIdentifier: String, isExternal: Boolean) {
+        val fileURL = getBaseDirectory(true, isExternal = true).URLByAppendingPathComponent("$songIdentifier.jpg")
         val nsData = artwork.usePinned { pinned ->
             NSData.dataWithBytes(bytes = pinned.addressOf(0), length = artwork.size.toULong())
         }
@@ -100,8 +102,8 @@ class Files: FilesInfrType {
         }
     }
 
-    override suspend fun readCachedArtworkBytes(identifier: String, fromSongs: Boolean): ByteArray? {
-        val fileURL = getBaseDirectory(fromSongs).URLByAppendingPathComponent("$identifier.jpg")
+    override suspend fun readCachedArtworkBytes(identifier: String, fromSongs: Boolean, isExternal: Boolean): ByteArray? {
+        val fileURL = getBaseDirectory(fromSongs, isExternal).URLByAppendingPathComponent("$identifier.jpg")
         fileURL?.let {
             val data = NSData.dataWithContentsOfURL(fileURL) ?: return null
             return data.toByteArray()
@@ -123,7 +125,7 @@ class Files: FilesInfrType {
         }
     }
 
-    @OptIn(ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
     override suspend fun removeImageFromCache(songIdentifier: String) {
         withContext(Dispatchers.IO) {
             try {
@@ -138,15 +140,15 @@ class Files: FilesInfrType {
                     }
 
                     if (success) {
-                        println("Archivo eliminado: ${fileURL.path}")
+                        println("Deleted file: ${fileURL.path}")
                     } else {
-                        println("No se pudo eliminar el archivo: ${fileURL.path}")
+                        println("Could not delete file: ${fileURL.path}")
                     }
                 } else {
-                    println("El archivo no existe: ${fileURL?.path}")
+                    println("File does not exist: ${fileURL?.path}")
                 }
             } catch (e: Exception) {
-                println("Error eliminando archivo de caché: ${e.message}")
+                println("Error when deleting image from cache: ${e.message}")
             }
         }
     }

@@ -9,7 +9,7 @@ data class Album(
     val name: String,
     val artist: Artist,
     @Transient
-    val artwork: ByteArray? = null,
+    var artwork: ByteArray? = null,
     val artworkHash: String?,
     val year: Int?
 )

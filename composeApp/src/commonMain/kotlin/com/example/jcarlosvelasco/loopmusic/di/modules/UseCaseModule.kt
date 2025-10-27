@@ -315,4 +315,7 @@ class UseCaseModule {
 
     @Single
     fun getRemoveSongFromPlaylist(repo: RemoveSongFromPlaylistRepoType): RemoveSongFromPlaylistType = RemoveSongFromPlaylist(repo)
+
+    @Single
+    fun getCacheAlbumArtwork(repo: CacheAlbumArtworkRepoType): CacheAlbumArtworkType = CacheAlbumArtwork(repo)
 }

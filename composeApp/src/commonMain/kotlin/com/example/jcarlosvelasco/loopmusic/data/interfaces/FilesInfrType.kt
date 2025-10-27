@@ -6,8 +6,8 @@ interface FilesInfrType {
     fun listSubdirectories(path: String): List<String>
     fun listFiles(path: String): List<File>
     fun takePersistablePermissionIfNeeded(uriString: String)
-    suspend fun storeImageInFolder(artwork: ByteArray, songIdentifier: String)
-    suspend fun readCachedArtworkBytes(identifier: String, fromSongs: Boolean): ByteArray?
+    suspend fun storeImageInFolder(artwork: ByteArray, songIdentifier: String, isExternal: Boolean)
+    suspend fun readCachedArtworkBytes(identifier: String, fromSongs: Boolean, isExternal: Boolean): ByteArray?
 
     suspend fun removeImageFromCache(songIdentifier: String)
     fun listCachedArtworkIdentifiers(): List<String>

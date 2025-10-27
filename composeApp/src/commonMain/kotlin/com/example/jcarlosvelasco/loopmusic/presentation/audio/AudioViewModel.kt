@@ -329,32 +329,64 @@ class AudioViewModel(
                 _previousCurrentPlayingSongAlbum.value = null
 
                 if (basePlaylist.isNotEmpty() && index != null && index in basePlaylist.indices) {
-                    _currentPlayingSong.value = basePlaylist[index]
-                    log("AudioViewModel", "Loading playback state for song: ${_currentPlayingSong.value?.name}")
-                    putSongInPlayerType.execute(_currentPlayingSong.value!!, it.currentPosition)
+                    val currentSong = basePlaylist[index]
+                    log("AudioViewModel", "Loading playback state for song: ${currentSong.name}")
+
+                    val songWithArtwork = if (currentSong.path.contains("file:///data/user/")) {
+                        log("AudioViewModel", "Loading cached artwork from external")
+                        currentSong.album.artworkHash?.let { hash ->
+                            val result = withContext(Dispatchers.IO) {
+                                getAlbumArtwork.execute(hash, isExternal = true)
+                            }
+                            log("AudioViewModel", "Artwork result is null? ${result == null} size=${result?.size ?: 0}")
+
+                            if (result != null) {
+                                currentSong.copy(
+                                    album = currentSong.album.copy(artwork = result)
+                                )
+                            } else {
+                                currentSong
+                            }
+                        } ?: currentSong
+                    } else {
+                        currentSong
+                    }
+
+                    _currentPlayingSong.value = songWithArtwork
+                    log("AudioViewModel", "Set current playing song with artwork size: ${songWithArtwork.album.artwork?.size ?: 0}")
+
+                    putSongInPlayerType.execute(songWithArtwork, it.currentPosition)
                 } else {
                     log("AudioViewModel", "No valid song to restore from playback state")
                     _currentPlayingSong.value = null
                 }
 
                 viewModelScope.launch(Dispatchers.IO) {
-                    val updatedPlaylist = it.playlist.mapIndexed { i, song ->
-                        val artworkBytes = song.album.artworkHash?.let { hash ->
+                    it.playlist.forEachIndexed { i, song ->
+                        var artworkBytes = song.album.artworkHash?.let { hash ->
                             getAlbumArtwork.execute(hash)
+                        }
+                        if (artworkBytes == null) {
+                            artworkBytes = song.album.artworkHash?.let { hash ->
+                                getAlbumArtwork.execute(hash, isExternal = true)
+                            }
                         }
                         val updatedSong = song.copy(album = song.album.copy(artwork = artworkBytes))
 
                         _playlist.update { old ->
-                            old.toMutableList().apply { set(i, updatedSong) }
+                            old.toMutableList().apply {
+                                if (i in indices) {
+                                    set(i, updatedSong)
+                                }
+                            }
                         }
 
-                        if (i == it.currentIndex) {
+                        if (i == it.currentIndex && _currentPlayingSong.value?.album?.artwork == null) {
                             _currentPlayingSong.value = updatedSong
+                            log("AudioViewModel", "Updated current song artwork in background: size=${artworkBytes?.size ?: 0}")
                         }
-
-                        updatedSong
                     }
-                    log("AudioViewModel", "Artwork loading finished for ${updatedPlaylist.size} songs")
+                    log("AudioViewModel", "Artwork loading finished for ${it.playlist.size} songs")
                 }
             }
             _playListLoadingState.value = true

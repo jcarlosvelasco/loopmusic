@@ -54,8 +54,6 @@ fun MainScreen(
     playlistSelectionViewModel: PlaylistSelectionViewModel,
     playlistsViewModel: PlaylistsViewModel,
 ) {
-    //TODO: ALL PILLS SHOULD BE CLOSED ON BACK PRESSED OR ANY OTHER NAVIGATION EVENT.
-
     val selectedTab by featuresViewModel.selectedTab.collectAsStateWithLifecycle()
 
     val songs by viewModel.songs.collectAsStateWithLifecycle()

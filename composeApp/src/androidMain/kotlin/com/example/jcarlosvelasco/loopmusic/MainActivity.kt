@@ -22,12 +22,15 @@ import androidx.navigation.compose.rememberNavController
 import com.example.jcarlosvelasco.loopmusic.data.repositories.FilesRepository
 import com.example.jcarlosvelasco.loopmusic.domain.model.File
 import com.example.jcarlosvelasco.loopmusic.domain.model.Theme
+import com.example.jcarlosvelasco.loopmusic.domain.usecase.CacheAlbumArtworkType
+import com.example.jcarlosvelasco.loopmusic.domain.usecase.GetAlbumArtworkType
 import com.example.jcarlosvelasco.loopmusic.infrastructure.PlaybackService
 import com.example.jcarlosvelasco.loopmusic.presentation.audio.AudioViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.theme.ThemeViewModel
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.CreateNavGraph
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.PlayingRoute
 import com.example.jcarlosvelasco.loopmusic.ui.theme.AppTheme
+import com.example.jcarlosvelasco.loopmusic.utils.let2
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
@@ -146,8 +149,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleAudioFile(uri: Uri, navController: androidx.navigation.NavController) {
+        log("MainActivity", "handleAudioFile: $uri")
         val filesRepository: FilesRepository = getKoin().get()
         val audioViewModel: AudioViewModel = getKoin().get()
+        val cacheAlbumArtwork: CacheAlbumArtworkType = getKoin().get()
+        val getAlbumArtwork: GetAlbumArtworkType = getKoin().get()
 
         lifecycleScope.launch {
             try {
@@ -155,6 +161,27 @@ class MainActivity : ComponentActivity() {
                 val internalUri = Uri.fromFile(internalFile)
 
                 val song = filesRepository.readFile(File(internalUri.toString(), modificationDate = 0L))
+
+                if (song.album.artwork == null) {
+                    withContext(Dispatchers.IO) {
+                        song.album.artworkHash?.let {
+                            log("MainActivity", "Fetching artwork for ${song.name}")
+                            val result = getAlbumArtwork.execute(it, isExternal = true)
+                            song.album.artwork = result
+                        }
+                    }
+                }
+                else {
+                    // Cache the artwork so it persists when reopening the app
+                    withContext(Dispatchers.IO) {
+                        let2(song.album.artworkHash, song.album.artwork) { hash, artwork ->
+                            log("MainActivity", "Caching artwork for ${song.name}")
+                            log("MainActivity", "artwork size: ${artwork.size}")
+                            cacheAlbumArtwork.execute(identifier = hash, image = artwork)
+                        }
+                    }
+                }
+                
                 audioViewModel.loadPlaylistAndPlay(listOf(song), isShuffled = false)
 
                 navController.navigate(PlayingRoute) {

@@ -16,6 +16,7 @@ import java.io.FileOutputStream
 class Files(
     private val context: Context
 ): FilesInfrType {
+    private val externalCacheFolderName = "artwork_cache_external"
     private val cacheFolderName = "artwork_cache"
     private val artistCacheFolderName = "artist_cache"
 
@@ -57,9 +58,10 @@ class Files(
         }
     }
 
-    override suspend fun storeImageInFolder(artwork: ByteArray, songIdentifier: String) {
+    override suspend fun storeImageInFolder(artwork: ByteArray, songIdentifier: String, isExternal: Boolean) {
         try {
-            val baseDirectory = java.io.File(context.getExternalFilesDir(null), cacheFolderName)
+            val folderName = if (isExternal) externalCacheFolderName else cacheFolderName
+            val baseDirectory = java.io.File(context.getExternalFilesDir(null), folderName)
 
             if (!baseDirectory.exists()) {
                 val created = baseDirectory.mkdirs()
@@ -127,8 +129,8 @@ class Files(
         }
     }
 
-    override suspend fun readCachedArtworkBytes(identifier: String, fromSongs: Boolean): ByteArray? {
-        val folder = if (fromSongs) cacheFolderName else artistCacheFolderName
+    override suspend fun readCachedArtworkBytes(identifier: String, fromSongs: Boolean, isExternal: Boolean): ByteArray? {
+        val folder = if (fromSongs && isExternal) externalCacheFolderName else if (fromSongs) cacheFolderName else artistCacheFolderName
         val baseDirectory = java.io.File(context.getExternalFilesDir(null), folder)
         val file = java.io.File(baseDirectory, "${identifier}.jpg")
         return if (file.exists()) withContext(Dispatchers.IO) { file.readBytes() } else null

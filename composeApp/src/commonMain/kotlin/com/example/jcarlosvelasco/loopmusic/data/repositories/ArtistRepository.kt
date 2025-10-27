@@ -26,6 +26,6 @@ class ArtistRepository(
     }
 
     override suspend fun getCachedArtistArtwork(artistIdentifier: String): ByteArray? {
-        return files.readCachedArtworkBytes(identifier = artistIdentifier, fromSongs = false)
+        return files.readCachedArtworkBytes(identifier = artistIdentifier, fromSongs = false, isExternal = false)
     }
 }
