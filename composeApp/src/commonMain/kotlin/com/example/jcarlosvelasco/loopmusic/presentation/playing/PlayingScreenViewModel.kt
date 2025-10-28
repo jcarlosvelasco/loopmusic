@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.example.jcarlosvelasco.loopmusic.domain.model.Album
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.GetFullQualityArtworkType
+import com.example.jcarlosvelasco.loopmusic.utils.isExternalPath
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,12 +33,20 @@ class PlayingScreenViewModel(
     private val isMenuExpanded = MutableStateFlow(false)
     val isMenuExpandedFlow = isMenuExpanded.asStateFlow()
 
+    private val _isExternalPath = MutableStateFlow(false)
+    val isExternalPath = _isExternalPath.asStateFlow()
+
     // Use a custom CoroutineScope that survives app restarts
     private val customScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     fun updateDominantColors(color: Color, onColor: Color) {
         _dominantColor.value = color
         _dominantOnColor.value = onColor
+    }
+
+    fun updateExternalPath(path: String) {
+        log("PlayingScreenViewModel", "External path: $path")
+        _isExternalPath.value = isExternalPath(path)
     }
 
     fun formatTime(time: Float): String {

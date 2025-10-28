@@ -4,6 +4,7 @@ import com.example.jcarlosvelasco.loopmusic.data.interfaces.FilesInfrType
 import com.example.jcarlosvelasco.loopmusic.domain.config.allowedExtensions
 import com.example.jcarlosvelasco.loopmusic.domain.model.File
 import com.example.jcarlosvelasco.loopmusic.extensions.toByteArray
+import com.example.jcarlosvelasco.loopmusic.utils.log
 import kotlinx.cinterop.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -70,6 +71,7 @@ class Files: FilesInfrType {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun getBaseDirectory(fromSongs: Boolean, isExternal: Boolean = false): NSURL {
+        log("Files", "Getting base directory, isExternal: $isExternal")
         val paths = NSSearchPathForDirectoriesInDomains(
             NSCachesDirectory,
             NSUserDomainMask,
@@ -90,7 +92,7 @@ class Files: FilesInfrType {
 
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun storeImageInFolder(artwork: ByteArray, songIdentifier: String, isExternal: Boolean) {
-        val fileURL = getBaseDirectory(true, isExternal = true).URLByAppendingPathComponent("$songIdentifier.jpg")
+        val fileURL = getBaseDirectory(true, isExternal = isExternal).URLByAppendingPathComponent("$songIdentifier.jpg")
         val nsData = artwork.usePinned { pinned ->
             NSData.dataWithBytes(bytes = pinned.addressOf(0), length = artwork.size.toULong())
         }

@@ -23,7 +23,8 @@ private val DarkColorScheme = darkColorScheme(
     background = background_dark,
     onSurfaceVariant = muted_dark,
     onPrimaryContainer = onPrimary_dark,
-    surfaceVariant = elevation2_dark
+    surfaceVariant = elevation2_dark,
+    onPrimary = font_color_light
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -33,7 +34,8 @@ private val LightColorScheme = lightColorScheme(
     background = background_light,
     onSurfaceVariant = muted_light,
     onPrimaryContainer = onPrimary_light,
-    surfaceVariant = elevation2_light
+    surfaceVariant = elevation2_light,
+    onPrimary = font_color_dark
 )
 
 @Composable

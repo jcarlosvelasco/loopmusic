@@ -34,7 +34,10 @@ class FilePicker(
 
     override fun buildFolderTree(path: String): Folder {
         val subPaths = files.listSubdirectories(path)
+            .filter { !getFolderName(it).startsWith(".") }
+
         log("FilePicker", subPaths.toString())
+
         val subfolders = subPaths.map { subPath -> buildFolderTree(subPath) }
 
         return Folder(

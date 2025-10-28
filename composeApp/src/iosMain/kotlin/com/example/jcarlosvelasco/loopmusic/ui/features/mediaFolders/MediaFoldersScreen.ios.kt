@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.jcarlosvelasco.loopmusic.domain.model.SelectionState
 import com.example.jcarlosvelasco.loopmusic.presentation.main.MainScreenViewModel
@@ -41,7 +42,8 @@ actual fun MediaFoldersScreen(
 ) {
     val scope = rememberCoroutineScope()
 
-    val mediaFolders by viewModel.mediaFolders.collectAsState(initial = null)
+    val mediaFolders by viewModel.mediaFolders.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     WithOrientation { isLandscape ->
         Scaffold(
@@ -69,6 +71,17 @@ actual fun MediaFoldersScreen(
                         actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
                         scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
                     ),
+                    actions = {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 4.dp
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .windowInsetsPadding(WindowInsets.safeDrawing)
+                        .padding(end = 16.dp)
                 )
             },
         ) { innerPadding ->

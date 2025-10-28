@@ -10,6 +10,7 @@ import com.example.jcarlosvelasco.loopmusic.domain.usecase.ios_specific.PublishN
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.ios_specific.SetPlayingType
 import com.example.jcarlosvelasco.loopmusic.domain.usecase.ios_specific.UpdateElapsedType
 import com.example.jcarlosvelasco.loopmusic.ui.features.playing.MediaState
+import com.example.jcarlosvelasco.loopmusic.utils.isExternalPath
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -330,15 +331,12 @@ class AudioViewModel(
 
                 if (basePlaylist.isNotEmpty() && index != null && index in basePlaylist.indices) {
                     val currentSong = basePlaylist[index]
-                    log("AudioViewModel", "Loading playback state for song: ${currentSong.name}")
 
-                    val songWithArtwork = if (currentSong.path.contains("file:///data/user/")) {
-                        log("AudioViewModel", "Loading cached artwork from external")
+                    val songWithArtwork = if (isExternalPath(currentSong.path)) {
                         currentSong.album.artworkHash?.let { hash ->
                             val result = withContext(Dispatchers.IO) {
                                 getAlbumArtwork.execute(hash, isExternal = true)
                             }
-                            log("AudioViewModel", "Artwork result is null? ${result == null} size=${result?.size ?: 0}")
 
                             if (result != null) {
                                 currentSong.copy(
@@ -353,7 +351,6 @@ class AudioViewModel(
                     }
 
                     _currentPlayingSong.value = songWithArtwork
-                    log("AudioViewModel", "Set current playing song with artwork size: ${songWithArtwork.album.artwork?.size ?: 0}")
 
                     putSongInPlayerType.execute(songWithArtwork, it.currentPosition)
                 } else {

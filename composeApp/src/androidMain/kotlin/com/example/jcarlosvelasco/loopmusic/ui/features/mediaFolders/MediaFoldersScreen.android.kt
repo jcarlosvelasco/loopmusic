@@ -35,6 +35,7 @@ actual fun MediaFoldersScreen(
     mainViewModel: MainScreenViewModel
 ) {
     val mediaFolders by viewModel.mediaFolders.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
 
@@ -74,8 +75,18 @@ actual fun MediaFoldersScreen(
                     actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
                     scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
                 ),
+                actions = {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(24.dp),
+                            strokeWidth = 4.dp
+                        )
+                    }
+                },
                 modifier = Modifier
                     .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(end = 16.dp)
             )
         },
     ) { innerPadding ->

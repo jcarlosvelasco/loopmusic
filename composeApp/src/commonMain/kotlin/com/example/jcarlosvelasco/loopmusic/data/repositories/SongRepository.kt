@@ -101,7 +101,6 @@ class SongRepository(
         return songs.map { song ->
             val hash = song.album.artworkHash
             val artwork = if (!hash.isNullOrBlank()) files.readCachedArtworkBytes(hash, fromSongs = true, isExternal = false) else null
-
             if (artwork != null) {
                 //Add artwork to song album
                 song.copy(album = song.album.copy(artwork = artwork))

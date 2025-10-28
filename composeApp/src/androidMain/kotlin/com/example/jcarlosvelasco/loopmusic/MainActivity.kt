@@ -45,16 +45,28 @@ class MainActivity : ComponentActivity() {
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var pendingNavigationUri: Uri? = null
 
+    companion object {
+        private const val KEY_PENDING_URI = "pendingUri"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Solicitar permisos si es necesario
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                arrayOf(
+                    Manifest.permission.POST_NOTIFICATIONS,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ),
                 0,
             )
         }
+
+        // Restaurar URI pendiente tras rotación
+        pendingNavigationUri = savedInstanceState?.getParcelable(KEY_PENDING_URI)
 
         setContent {
             val themeScreenViewModel: ThemeViewModel = koinViewModel()
@@ -94,7 +106,15 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        handleIncomingIntent(intent)
+        // Solo manejar el intent si la Activity se crea por primera vez
+        if (savedInstanceState == null) {
+            handleIncomingIntent(intent)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pendingNavigationUri?.let { outState.putParcelable(KEY_PENDING_URI, it) }
     }
 
     override fun onStart() {
@@ -115,22 +135,20 @@ class MainActivity : ComponentActivity() {
 
     private fun handleIncomingIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_VIEW) {
-            val uri = intent.data
-            if (uri != null) {
-                try {
-                    try {
-                        contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    } catch (e: SecurityException) {
-                        e.printStackTrace()
-                    }
-                } catch (e: SecurityException) {
-                    e.printStackTrace()
-                }
+            val uri = intent.data ?: return
 
-                val fileName = uri.lastPathSegment ?: "Desconocido"
-                log("MainActivity", "File name: $fileName")
-                pendingNavigationUri = uri
+            // Tomar persistable permission si la intent lo permite
+            try {
+                val takeFlags = intent.flags and
+                        (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                contentResolver.takePersistableUriPermission(uri, takeFlags)
+            } catch (e: SecurityException) {
+                e.printStackTrace()
             }
+
+            val fileName = uri.lastPathSegment ?: "Desconocido"
+            log("MainActivity", "File name: $fileName")
+            pendingNavigationUri = uri
         }
     }
 
@@ -170,18 +188,16 @@ class MainActivity : ComponentActivity() {
                             song.album.artwork = result
                         }
                     }
-                }
-                else {
-                    // Cache the artwork so it persists when reopening the app
+                } else {
+                    // Cache the artwork
                     withContext(Dispatchers.IO) {
                         let2(song.album.artworkHash, song.album.artwork) { hash, artwork ->
                             log("MainActivity", "Caching artwork for ${song.name}")
-                            log("MainActivity", "artwork size: ${artwork.size}")
                             cacheAlbumArtwork.execute(identifier = hash, image = artwork)
                         }
                     }
                 }
-                
+
                 audioViewModel.loadPlaylistAndPlay(listOf(song), isShuffled = false)
 
                 navController.navigate(PlayingRoute) {

@@ -30,6 +30,9 @@ class MediaFoldersScreenViewModel(
     private val _mediaFolders = MutableStateFlow<List<Folder>?>(null)
     val mediaFolders = _mediaFolders.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
     val fromSettings: Boolean = savedStateHandle.get<Boolean>("fromSettings") ?: false
 
     init {
@@ -193,7 +196,17 @@ class MediaFoldersScreenViewModel(
     }
 
     fun addFolderFromLauncher(path: String) {
-        val folder = buildFolderTree.execute(path)
-        addFolder(folder)
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val folder = withContext(Dispatchers.IO) {
+                    buildFolderTree.execute(path)
+                }
+
+                addFolder(folder)
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 }

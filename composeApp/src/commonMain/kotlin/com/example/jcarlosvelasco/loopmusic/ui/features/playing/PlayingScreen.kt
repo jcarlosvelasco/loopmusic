@@ -57,15 +57,16 @@ fun PlayingScreen(
 
     val isMenuExpanded by viewModel.isMenuExpandedFlow.collectAsStateWithLifecycle()
 
+    val isExternal by viewModel.isExternalPath.collectAsStateWithLifecycle()
+
     val dominantColorState = rememberByteArrayDominantColorState(
         defaultColor = dominantColor ?: MaterialTheme.colorScheme.background,
         defaultOnColor = dominantOnColor ?: MaterialTheme.colorScheme.onBackground
     )
 
     LaunchedEffect(currentPlayingSong) {
-        log("PlayingScreen", "Current playing song: $currentPlayingSong")
         currentPlayingSong?.let { currentSong ->
-            log("PlayingScreen", "previousCurrentPlayingAlbum: $previousCurrentPlayingAlbum")
+            log("PlayingScreen", "Previous current playing album: ${previousCurrentPlayingAlbum?.name}")
             if (previousCurrentPlayingAlbum == null) {
                 if (viewModel.lastProcessedAlbum?.name != currentSong.album.name ) {
                     log("PlayingScreen", "First time playing song")
@@ -101,6 +102,7 @@ fun PlayingScreen(
                     }
                 }
             }
+            viewModel.updateExternalPath(currentSong.path)
         }
     }
 
@@ -125,59 +127,73 @@ fun PlayingScreen(
                         )
                     }
 
-                    Column(
-                        modifier = Modifier
-                            .weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            stringResource(Res.string.playing_playing_from),
-                            style = appTypography().bodyMedium
-                        )
-                        Text(
-                            playlistName,
-                            fontSize = 16.sp,
-                            fontFamily = urbanistFontFamily(),
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    currentPlayingSong?.let {
+                        if (!isExternal) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    stringResource(Res.string.playing_playing_from),
+                                    style = appTypography().bodyMedium
+                                )
+                                Text(
+                                    playlistName,
+                                    fontSize = 16.sp,
+                                    fontFamily = urbanistFontFamily(),
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
 
-                    Box {
-                        IconButton(onClick = { viewModel.updateIsMenuExpanded(!isMenuExpanded) }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                        }
-                        DropdownMenu(
-                            expanded = isMenuExpanded,
-                            onDismissRequest = { viewModel.updateIsMenuExpanded(false) },
-                            containerColor = MaterialTheme.colorScheme.background
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.playing_gotoalbum), style = appTypography().bodyLarge) },
-                                onClick = {
-                                    viewModel.updateIsMenuExpanded(false)
+                            Box {
+                                IconButton(onClick = { viewModel.updateIsMenuExpanded(!isMenuExpanded) }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                                }
+                                DropdownMenu(
+                                    expanded = isMenuExpanded,
+                                    onDismissRequest = { viewModel.updateIsMenuExpanded(false) },
+                                    containerColor = MaterialTheme.colorScheme.background
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(Res.string.playing_gotoalbum),
+                                                style = appTypography().bodyLarge
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.updateIsMenuExpanded(false)
 
-                                    currentPlayingSong?.let {
-                                        safeNavigate(
-                                            navController = navController,
-                                            AlbumDetailRoute(it.album.id)
-                                        )
-                                    }
+                                            safeNavigate(
+                                                navController = navController,
+                                                AlbumDetailRoute(it.album.id)
+                                            )
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(Res.string.playing_gotoartist),
+                                                style = appTypography().bodyLarge
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.updateIsMenuExpanded(false)
+                                            log(
+                                                "PlayingScreen",
+                                                "Goto artist with id: ${currentPlayingSong?.album?.artist?.id}"
+                                            )
+
+                                            safeNavigate(
+                                                navController = navController,
+                                                ArtistDetailRoute(it.album.artist.id)
+                                            )
+                                        }
+                                    )
                                 }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.playing_gotoartist), style = appTypography().bodyLarge) },
-                                onClick = {
-                                    viewModel.updateIsMenuExpanded(false)
-                                    log("PlayingScreen", "Goto artist with id: ${currentPlayingSong?.album?.artist?.id}")
-                                    currentPlayingSong?.let {
-                                        safeNavigate(
-                                            navController = navController,
-                                            ArtistDetailRoute(it.album.artist.id)
-                                        )
-                                    }
-                                }
-                            )
+                            }
                         }
                     }
                 }
