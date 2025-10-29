@@ -48,8 +48,7 @@ fun ArtistsScreen(
             playingScreenViewModel = playingScreenViewModel,
             modifier = Modifier
                 .fillMaxSize()
-                .safeContentPadding()
-                .padding(top = 16.dp),
+                .safeContentPadding(),
             selectedFeature = SCREEN_FEATURES.Artists,
             mediaState = mediaState,
             onPlayPauseClick = onPlayPauseClick,

@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.jcarlosvelasco.loopmusic.domain.model.SCREEN_FEATURES
 import com.example.jcarlosvelasco.loopmusic.presentation.features.FeaturesViewModel
+import com.example.jcarlosvelasco.loopmusic.ui.PlatformBox
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.safePopBackStack
 import com.example.jcarlosvelasco.loopmusic.ui.theme.appTypography
 import loopmusic.composeapp.generated.resources.*
@@ -30,133 +31,139 @@ fun SettingsTabsScreen(
 ) {
     val currentScreenFeatures by featuresViewModel.selectedScreenFeatures.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(
-                    stringResource(Res.string.tabs_header),
-                    style = appTypography().headlineLarge) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { safePopBackStack(navController) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Abrir ajustes"
+    PlatformBox {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(Res.string.tabs_header),
+                            style = appTypography().headlineLarge
                         )
-                    }
-                },
-                colors = TopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
-                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
-                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
-                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
-                ),
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Abrir ajustes"
+                            )
+                        }
+                    },
+                    colors = TopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                        navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                        actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                        scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    ),
+                    modifier = Modifier
+                        .windowInsetsPadding(WindowInsets.safeDrawing)
+                )
+            },
+        ) { innerPadding ->
+            Column(
                 modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
                     .windowInsetsPadding(WindowInsets.safeDrawing)
-            )
-        },
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(horizontal = 16.dp)
-        ) {
-            DummyCustomBottomNavigationBar(
-                navigationTabs = featuresViewModel.selectedNavigationTabs
-            )
+                    .padding(horizontal = 16.dp)
+            ) {
+                DummyCustomBottomNavigationBar(
+                    navigationTabs = featuresViewModel.selectedNavigationTabs
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            featuresViewModel.remainingScreenFeatures?.let {
-                if (it.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        stringResource(Res.string.tabs_add),
-                        style = appTypography().bodyLarge,
-                    )
-                    Column {
-                        it.forEach { feature ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = stringResource(feature.titleRes),
-                                    style = appTypography().bodyMedium)
-                                Button(
-                                    enabled = currentScreenFeatures != null && currentScreenFeatures!!.size < 4,
-                                    onClick = {
-                                        featuresViewModel.addFeature(feature)
-                                    }
+                featuresViewModel.remainingScreenFeatures?.let {
+                    if (it.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            stringResource(Res.string.tabs_add),
+                            style = appTypography().bodyLarge,
+                        )
+                        Column {
+                            it.forEach { feature ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        stringResource(Res.string.add),
-                                        style = appTypography().bodyLarge,
+                                        text = stringResource(feature.titleRes),
+                                        style = appTypography().bodyMedium
                                     )
+                                    Button(
+                                        enabled = currentScreenFeatures != null && currentScreenFeatures!!.size < 4,
+                                        onClick = {
+                                            featuresViewModel.addFeature(feature)
+                                        }
+                                    ) {
+                                        Text(
+                                            stringResource(Res.string.add),
+                                            style = appTypography().bodyLarge,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            currentScreenFeatures?.let {
-                if (it.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        stringResource(Res.string.tabs_current_tabs),
-                        style = appTypography().bodyLarge,
-                    )
-                    Column {
-                        it.forEachIndexed { index, feature ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = stringResource(feature.titleRes),
-                                    style = appTypography().bodyMedium
-                                )
-
+                currentScreenFeatures?.let {
+                    if (it.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            stringResource(Res.string.tabs_current_tabs),
+                            style = appTypography().bodyLarge,
+                        )
+                        Column {
+                            it.forEachIndexed { index, feature ->
                                 Row(
+                                    modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    IconButton(
-                                        enabled = index > 0,
-                                        onClick = {
-                                            featuresViewModel.moveFeatureLeft(feature)
-                                        },
-                                        content = {
-                                            Icon(Icons.Default.KeyboardArrowUp, "Up")
-                                        }
+                                    Text(
+                                        text = stringResource(feature.titleRes),
+                                        style = appTypography().bodyMedium
                                     )
 
-                                    IconButton(
-                                        enabled = index < it.size - 1,
-                                        onClick = {
-                                            featuresViewModel.moveFeatureRight(feature)
-                                        },
-                                        content = {
-                                            Icon(Icons.Default.KeyboardArrowDown, "Up")
-                                        }
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        IconButton(
+                                            enabled = index > 0,
+                                            onClick = {
+                                                featuresViewModel.moveFeatureLeft(feature)
+                                            },
+                                            content = {
+                                                Icon(Icons.Default.KeyboardArrowUp, "Up")
+                                            }
+                                        )
 
-                                    IconButton(
-                                        enabled = feature != SCREEN_FEATURES.Home && currentScreenFeatures != null && currentScreenFeatures!!.size >= 2,
-                                        onClick = {
-                                            featuresViewModel.removeFeature(feature)
-                                        },
-                                        content = {
-                                            Icon(Icons.Filled.Delete, "Remove")
-                                        }
-                                    )
+                                        IconButton(
+                                            enabled = index < it.size - 1,
+                                            onClick = {
+                                                featuresViewModel.moveFeatureRight(feature)
+                                            },
+                                            content = {
+                                                Icon(Icons.Default.KeyboardArrowDown, "Up")
+                                            }
+                                        )
+
+                                        IconButton(
+                                            enabled = feature != SCREEN_FEATURES.Home && currentScreenFeatures != null && currentScreenFeatures!!.size >= 2,
+                                            onClick = {
+                                                featuresViewModel.removeFeature(feature)
+                                            },
+                                            content = {
+                                                Icon(Icons.Filled.Delete, "Remove")
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

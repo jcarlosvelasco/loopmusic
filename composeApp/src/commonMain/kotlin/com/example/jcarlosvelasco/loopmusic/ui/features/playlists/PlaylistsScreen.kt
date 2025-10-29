@@ -87,8 +87,7 @@ fun PlaylistsScreen(
             playingScreenViewModel = playingScreenViewModel,
             modifier = Modifier
                 .fillMaxSize()
-                .safeContentPadding()
-                .padding(top = 16.dp),
+                .safeContentPadding(),
             selectedFeature = SCREEN_FEATURES.Playlists,
             condition = !isSelectionMode,
             currentPlayingSong = currentPlayingSong,

@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import com.example.jcarlosvelasco.loopmusic.presentation.audio.AudioViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.playing.PlayingScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.theme.ThemeViewModel
+import com.example.jcarlosvelasco.loopmusic.ui.PlatformBox
 import com.example.jcarlosvelasco.loopmusic.ui.WithOrientation
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.AlbumDetailRoute
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.ArtistDetailRoute
@@ -106,111 +107,134 @@ fun PlayingScreen(
         }
     }
 
-    WithOrientation { isLandscape ->
-        Scaffold {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .safeContentPadding()
-            ) {
-                Row(
+    PlatformBox {
+        WithOrientation { isLandscape ->
+            Scaffold {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .safeContentPadding()
                 ) {
-                    IconButton(
-                        onClick = { safePopBackStack(navController) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Previous"
-                        )
-                    }
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Previous"
+                            )
+                        }
 
-                    currentPlayingSong?.let {
-                        if (!isExternal) {
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    stringResource(Res.string.playing_playing_from),
-                                    style = appTypography().bodyMedium
-                                )
-                                Text(
-                                    playlistName,
-                                    fontSize = 16.sp,
-                                    fontFamily = urbanistFontFamily(),
-                                    fontWeight = FontWeight.SemiBold,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-
-                            Box {
-                                IconButton(onClick = { viewModel.updateIsMenuExpanded(!isMenuExpanded) }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                                }
-                                DropdownMenu(
-                                    expanded = isMenuExpanded,
-                                    onDismissRequest = { viewModel.updateIsMenuExpanded(false) },
-                                    containerColor = MaterialTheme.colorScheme.background
+                        currentPlayingSong?.let {
+                            if (!isExternal) {
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                stringResource(Res.string.playing_gotoalbum),
-                                                style = appTypography().bodyLarge
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.updateIsMenuExpanded(false)
-
-                                            safeNavigate(
-                                                navController = navController,
-                                                AlbumDetailRoute(it.album.id)
-                                            )
-                                        }
+                                    Text(
+                                        stringResource(Res.string.playing_playing_from),
+                                        style = appTypography().bodyMedium
                                     )
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                stringResource(Res.string.playing_gotoartist),
-                                                style = appTypography().bodyLarge
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.updateIsMenuExpanded(false)
-                                            log(
-                                                "PlayingScreen",
-                                                "Goto artist with id: ${currentPlayingSong?.album?.artist?.id}"
-                                            )
-
-                                            safeNavigate(
-                                                navController = navController,
-                                                ArtistDetailRoute(it.album.artist.id)
-                                            )
-                                        }
+                                    Text(
+                                        playlistName,
+                                        fontSize = 16.sp,
+                                        fontFamily = urbanistFontFamily(),
+                                        fontWeight = FontWeight.SemiBold,
+                                        textAlign = TextAlign.Center
                                     )
+                                }
+
+                                Box {
+                                    IconButton(onClick = { viewModel.updateIsMenuExpanded(!isMenuExpanded) }) {
+                                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                                    }
+                                    DropdownMenu(
+                                        expanded = isMenuExpanded,
+                                        onDismissRequest = { viewModel.updateIsMenuExpanded(false) },
+                                        containerColor = MaterialTheme.colorScheme.background
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    stringResource(Res.string.playing_gotoalbum),
+                                                    style = appTypography().bodyLarge
+                                                )
+                                            },
+                                            onClick = {
+                                                viewModel.updateIsMenuExpanded(false)
+
+                                                safeNavigate(
+                                                    navController = navController,
+                                                    AlbumDetailRoute(it.album.id)
+                                                )
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    stringResource(Res.string.playing_gotoartist),
+                                                    style = appTypography().bodyLarge
+                                                )
+                                            },
+                                            onClick = {
+                                                viewModel.updateIsMenuExpanded(false)
+                                                log(
+                                                    "PlayingScreen",
+                                                    "Goto artist with id: ${currentPlayingSong?.album?.artist?.id}"
+                                                )
+
+                                                safeNavigate(
+                                                    navController = navController,
+                                                    ArtistDetailRoute(it.album.artist.id)
+                                                )
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                if (isLandscape) {
-                    currentPlayingSong?.let {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                    if (isLandscape) {
+                        currentPlayingSong?.let {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                PlayingScreenImage(
+                                    currentPlayingSong = it,
+                                    fullQualityArtwork = fullQualityArtwork
+                                )
+
+                                PlayingInfo(
+                                    song = it,
+                                    currentPosition = currentPosition,
+                                    audioViewModel = audioViewModel,
+                                    dominantColorState = dominantColorState,
+                                    viewModel = viewModel,
+                                    listMode = listMode,
+                                    mediaState = mediaState,
+                                    playMode = playMode,
+                                    themeViewModel = themeViewModel
+                                )
+                            }
+                        }
+                    } else {
+                        currentPlayingSong?.let {
                             PlayingScreenImage(
                                 currentPlayingSong = it,
                                 fullQualityArtwork = fullQualityArtwork
                             )
+
+                            Spacer(modifier = Modifier.height(24.dp))
 
                             PlayingInfo(
                                 song = it,
@@ -224,27 +248,6 @@ fun PlayingScreen(
                                 themeViewModel = themeViewModel
                             )
                         }
-                    }
-                } else {
-                    currentPlayingSong?.let {
-                        PlayingScreenImage(
-                            currentPlayingSong = it,
-                            fullQualityArtwork = fullQualityArtwork
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        PlayingInfo(
-                            song = it,
-                            currentPosition = currentPosition,
-                            audioViewModel = audioViewModel,
-                            dominantColorState = dominantColorState,
-                            viewModel = viewModel,
-                            listMode = listMode,
-                            mediaState = mediaState,
-                            playMode = playMode,
-                            themeViewModel = themeViewModel
-                        )
                     }
                 }
             }
