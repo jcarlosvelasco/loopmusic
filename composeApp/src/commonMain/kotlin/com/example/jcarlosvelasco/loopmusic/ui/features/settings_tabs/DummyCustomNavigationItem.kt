@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.jcarlosvelasco.loopmusic.ui.features.main.NavigationTab
+import com.example.jcarlosvelasco.loopmusic.ui.theme.appTypography
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -61,7 +62,8 @@ fun DummyCustomNavigationItem(
                 overflow = TextOverflow.Ellipsis,
                 text = title,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Bold,
+                style = appTypography().bodyMedium
             )
         }
     }
