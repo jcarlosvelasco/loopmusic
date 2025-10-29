@@ -110,7 +110,20 @@ fun AlbumsScreen(
                             }
                         }
 
-                        albums.isEmpty() -> {
+                        albums.isEmpty() && loadingStatus == SongsLoadingStatus.LOADING -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillParentMaxSize()
+                                        .wrapContentHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
+
+                        albums.isEmpty() && loadingStatus == SongsLoadingStatus.DONE -> {
                             item {
                                 Box(
                                     modifier = Modifier

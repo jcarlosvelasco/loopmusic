@@ -6,6 +6,11 @@ import com.example.jcarlosvelasco.loopmusic.data.http.ContentTypes
 import com.example.jcarlosvelasco.loopmusic.data.http.HttpHeaders
 import com.example.jcarlosvelasco.loopmusic.data.interfaces.HttpClientType
 import com.example.jcarlosvelasco.loopmusic.utils.encodeBase64
+import com.example.jcarlosvelasco.loopmusic.utils.log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 
@@ -51,26 +56,70 @@ class SpotifyApiService(
 
     suspend fun searchArtist(
         artistName: String,
-        limit: Int = 1
-    ): ArtistSearchResponse {
-        val token = getAccessToken()
+        limit: Int = 1,
+        maxRetries: Int = 3
+    ): Result<ArtistSearchResponse> = withContext(Dispatchers.IO) {
+        var lastException: Exception? = null
 
-        val response = httpClient.get(
-            url = "https://api.spotify.com/v1/search",
-            headers = mapOf(
-                HttpHeaders.AUTHORIZATION to "Bearer $token"
-            ),
-            queryParameters = mapOf(
-                "q" to artistName,
-                "type" to "artist",
-                "limit" to limit.toString()
-            )
-        )
+        repeat(maxRetries) { attempt ->
+            try {
+                val token = getAccessToken()
 
-        if (!response.isSuccessful) {
-            throw Exception("Error searching artist: ${response.statusCode}")
+                val response = httpClient.get(
+                    url = "https://api.spotify.com/v1/search",
+                    headers = mapOf(
+                        HttpHeaders.AUTHORIZATION to "Bearer $token"
+                    ),
+                    queryParameters = mapOf(
+                        "q" to artistName,
+                        "type" to "artist",
+                        "limit" to limit.toString()
+                    )
+                )
+
+                when (response.statusCode) {
+                    200 -> {
+                        val data = json.decodeFromString<ArtistSearchResponse>(response.body)
+                        return@withContext Result.success(data)
+                    }
+                    429 -> {
+                        // Rate limit exceeded
+                        val retryAfter = response.headers["Retry-After"]?.toIntOrNull() ?: ((attempt + 1) * 2)
+                        log("SpotifyAPI", "Rate limit hit for $artistName, waiting ${retryAfter}s")
+
+                        if (attempt < maxRetries - 1) {
+                            delay(retryAfter * 1000L)
+                            lastException = SpotifyException.RateLimitException(retryAfter)
+                        } else {
+                            return@withContext Result.failure(SpotifyException.RateLimitException(retryAfter))
+                        }
+                    }
+                    in 500..599 -> {
+                        log("SpotifyAPI", "Server error ${response.statusCode} for $artistName")
+                        if (attempt < maxRetries - 1) {
+                            delay((attempt + 1) * 1000L) // Exponential backoff
+                            lastException = SpotifyException.ServerError(response.statusCode)
+                        } else {
+                            return@withContext Result.failure(SpotifyException.ServerError(response.statusCode))
+                        }
+                    }
+                    in 400..499 -> {
+                        log("SpotifyAPI", "Client error ${response.statusCode} for $artistName")
+                        return@withContext Result.failure(SpotifyException.ClientError(response.statusCode))
+                    }
+                    else -> {
+                        return@withContext Result.failure(Exception("Unexpected status code: ${response.statusCode}"))
+                    }
+                }
+            } catch (e: Exception) {
+                log("SpotifyAPI", "Exception for $artistName: ${e.message}")
+                lastException = SpotifyException.NetworkError(e)
+                if (attempt < maxRetries - 1) {
+                    delay((attempt + 1) * 1000L)
+                }
+            }
         }
 
-        return json.decodeFromString(response.body)
+        Result.failure(lastException ?: Exception("Unknown error"))
     }
 }

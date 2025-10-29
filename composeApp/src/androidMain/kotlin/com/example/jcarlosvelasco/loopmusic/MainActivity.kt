@@ -52,7 +52,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Solicitar permisos si es necesario
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
@@ -65,8 +64,12 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        // Restaurar URI pendiente tras rotación
-        pendingNavigationUri = savedInstanceState?.getParcelable(KEY_PENDING_URI)
+        pendingNavigationUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            savedInstanceState?.getParcelable(KEY_PENDING_URI, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            savedInstanceState?.getParcelable(KEY_PENDING_URI)
+        }
 
         setContent {
             val themeScreenViewModel: ThemeViewModel = koinViewModel()
@@ -106,7 +109,6 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        // Solo manejar el intent si la Activity se crea por primera vez
         if (savedInstanceState == null) {
             handleIncomingIntent(intent)
         }
@@ -137,20 +139,25 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_VIEW) {
             val uri = intent.data ?: return
 
-            // Tomar persistable permission si la intent lo permite
             try {
                 val takeFlags = intent.flags and
                         (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                contentResolver.takePersistableUriPermission(uri, takeFlags)
+
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    takeFlags and
+                            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                )
             } catch (e: SecurityException) {
                 e.printStackTrace()
             }
 
-            val fileName = uri.lastPathSegment ?: "Desconocido"
+            val fileName = uri.lastPathSegment ?: "Unknown"
             log("MainActivity", "File name: $fileName")
             pendingNavigationUri = uri
         }
     }
+
 
     private suspend fun copyToInternalStorage(uri: Uri): java.io.File {
         val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: "audio_${System.currentTimeMillis()}.mp3"

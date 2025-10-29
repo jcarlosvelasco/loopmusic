@@ -6,7 +6,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -24,13 +23,7 @@ import com.example.jcarlosvelasco.loopmusic.ui.navigation.MediaFoldersRoute
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.safePopBackStack
 import com.example.jcarlosvelasco.loopmusic.ui.theme.appTypography
 import kotlinx.coroutines.launch
-import loopmusic.composeapp.generated.resources.Res
-import loopmusic.composeapp.generated.resources.media_folder
-import loopmusic.composeapp.generated.resources.media_folders_add
-import loopmusic.composeapp.generated.resources.media_folders_continue
-import loopmusic.composeapp.generated.resources.media_folders_empty
-import loopmusic.composeapp.generated.resources.media_folders_empty_tip
-import loopmusic.composeapp.generated.resources.media_folders_save
+import loopmusic.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)

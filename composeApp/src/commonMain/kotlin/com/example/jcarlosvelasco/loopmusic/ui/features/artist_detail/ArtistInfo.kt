@@ -1,5 +1,6 @@
 package com.example.jcarlosvelasco.loopmusic.ui.features.artist_detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -53,7 +54,13 @@ fun ArtistInfo(
                     modifier = Modifier.matchParentSize()
                 )
             }
-        }
+        } ?:
+        Box(
+            modifier = Modifier
+                .size(250.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Gray)
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 

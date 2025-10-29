@@ -143,7 +143,20 @@ fun SongsScreen(
                                 }
                             }
 
-                            songs.isEmpty() -> {
+                            songs.isEmpty() && loadingStatus == SongsLoadingStatus.LOADING -> {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillParentMaxSize()
+                                            .wrapContentHeight(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                            }
+
+                            songs.isEmpty() && loadingStatus == SongsLoadingStatus.DONE -> {
                                 item {
                                     Box(
                                         modifier = Modifier

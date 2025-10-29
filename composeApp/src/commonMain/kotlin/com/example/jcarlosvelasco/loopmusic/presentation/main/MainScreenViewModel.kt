@@ -11,13 +11,7 @@ import com.example.jcarlosvelasco.loopmusic.presentation.main.manager.PlaylistMa
 import com.example.jcarlosvelasco.loopmusic.utils.availableProcessors
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.max
@@ -125,14 +119,12 @@ class MainScreenViewModel(
                     displayCachedSongs(cachedSongs)
                     log("MainScreenViewModel", "Cached songs displayed immediately")
                     _loadingStatus.value = SongsLoadingStatus.CACHED
-                    artworkManager.loadArtistArtwork(_artists.value ?: emptyList())
+                    loadArtistArtwork()
                 }
-
                 val folders = foldersDeferred.await()
                 val fileListDeferred = async(Dispatchers.IO) { getFileList.execute(folders) }
 
                 playlistManager.loadPlaylists()
-
                 val filePaths = fileListDeferred.await()
                 log("MainScreenViewModel", "File paths loaded: ${filePaths.size}")
 
@@ -141,7 +133,7 @@ class MainScreenViewModel(
                 updateSongsUIImmediate()
 
                 if (cachedSongs.isEmpty()) {
-                    artworkManager.loadArtistArtwork(_artists.value ?: emptyList())
+                    loadArtistArtwork()
                 }
 
                 _loadingStatus.value = SongsLoadingStatus.DONE
@@ -423,6 +415,20 @@ class MainScreenViewModel(
             _songs.value = songsCopy
             _albums.value = albumsCopy.sortedWith(albumComparator)
             _artists.value = artistsCopy.sortedWith(artistComparator)
+        }
+    }
+
+    fun loadArtistArtwork() {
+        viewModelScope.launch {
+            val currentArtists = _artists.value ?: return@launch
+            val updatedArtists = artworkManager.loadArtistArtwork(currentArtists)
+
+            collectionMutex.withLock {
+                artistsCollection.clear()
+                updatedArtists.forEach { artistsCollection[it.id] = it }
+            }
+
+            updateSongsUIImmediate()
         }
     }
 

@@ -52,7 +52,7 @@ fun AlbumItem(item: Album, modifier: Modifier = Modifier, onClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.padding(2.dp))
             Text(
-                item.artist.name,
+                "${item.artist.name} · ${item.year}",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

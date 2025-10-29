@@ -32,7 +32,8 @@ class KtorHttpClient(): HttpClientType {
         return HttpResponse(
             statusCode = response.status.value,
             body = response.bodyAsText(),
-            isSuccessful = response.status.isSuccess()
+            isSuccessful = response.status.isSuccess(),
+            headers = response.headers.toMap()
         )
     }
 
@@ -53,7 +54,8 @@ class KtorHttpClient(): HttpClientType {
         return HttpResponse(
             statusCode = response.status.value,
             body = response.bodyAsText(),
-            isSuccessful = response.status.isSuccess()
+            isSuccessful = response.status.isSuccess(),
+            headers = response.headers.toMap()
         )
     }
 
@@ -67,4 +69,9 @@ class KtorHttpClient(): HttpClientType {
             }
         }.body()
     }
+}
+
+private fun Headers.toMap(): Map<String, String> {
+    return this.entries()
+        .associate { (key, values) -> key to values.firstOrNull().orEmpty() }
 }

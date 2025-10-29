@@ -10,7 +10,7 @@ import kotlinx.coroutines.*
 import kotlin.random.Random
 
 interface ArtworkManagerType {
-    suspend fun loadArtistArtwork(artists: List<Artist>)
+    suspend fun loadArtistArtwork(artists: List<Artist>): List<Artist>
     suspend fun cleanIfNeeded()
 }
 
@@ -25,19 +25,40 @@ class ArtworkManager(
         log("ArtworkManager", "Init")
     }
 
-    override suspend fun loadArtistArtwork(artists: List<Artist>) {
-        coroutineScope {
-            val dispatcher = Dispatchers.IO.limitedParallelism(4)
-            artists.filter { it.artwork == null }.map { artist ->
-                async(dispatcher) {
-                    val cached = getCachedArtistArtwork.execute(artist.name)
-                    val art = cached ?: getArtistArtwork.execute(artist.name)?.also {
-                        cacheArtistArtwork.execute(artist.name, it)
-                    }
-                    artist.artwork = art
-                }
-            }.awaitAll()
+    override suspend fun loadArtistArtwork(artists: List<Artist>): List<Artist> = coroutineScope {
+        val dispatcher = Dispatchers.IO.limitedParallelism(2)
+        val delayBetweenRequests = 300L
+
+        val (cached, notCached) = artists.partition { artist ->
+            getCachedArtistArtwork.execute(artist.name) != null
         }
+
+        log("ArtworkManager", "Found ${cached.size} cached, ${notCached.size} need download")
+
+        val cachedWithArtwork = cached.map { artist ->
+            val artwork = getCachedArtistArtwork.execute(artist.name)
+            log("ArtworkManager", "Loaded cached artwork for ${artist.name}")
+            artist.copy(artwork = artwork)
+        }
+
+        val notCachedWithArtwork = notCached.mapIndexed { index, artist ->
+            async(dispatcher) {
+                delay(index * delayBetweenRequests)
+
+                try {
+                    val art = getArtistArtwork.execute(artist.name).getOrNull()
+                    art?.let { cacheArtistArtwork.execute(artist.name, it) }
+                    log("ArtworkManager", "Downloaded artwork for ${artist.name}")
+                    artist.copy(artwork = art)
+                } catch (e: Exception) {
+                    log("ArtworkManager", "Error loading artwork for ${artist.name}: ${e.message}")
+                    artist.copy(artwork = null)
+                }
+            }
+        }.awaitAll()
+
+        val resultMap = (cachedWithArtwork + notCachedWithArtwork).associateBy { it.name }
+        artists.map { resultMap[it.name] ?: it }
     }
 
     override suspend fun cleanIfNeeded() {

@@ -185,131 +185,105 @@ fun SearchScreen(
             Spacer(modifier = Modifier.padding(12.dp))
 
             if (query == "") {
-                if (loadingStatus == SongsLoadingStatus.CACHED || loadingStatus == SongsLoadingStatus.DONE) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
-                        )
-                        Text(stringResource(Res.string.search_text), style = appTypography().headlineMedium)
-                    }
-                }
-                else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search"
+                    )
+                    Text(stringResource(Res.string.search_text), style = appTypography().headlineMedium)
                 }
             }
             else {
-                if (loadingStatus == SongsLoadingStatus.CACHED || loadingStatus == SongsLoadingStatus.DONE) {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        filteredSongs?.let {
-                            if (it.isNotEmpty() && isSongsButtonActive) {
-                                item {
-                                    Text(stringResource(Res.string.search_songs_text), style = appTypography().bodyLarge)
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                }
-                                it.forEach { song ->
-                                    item {
-                                        SongItem(
-                                            song = song,
-                                            modifier = Modifier.padding(bottom = 16.dp),
-                                            onClick = {
-                                                audioViewModel.setPlaylistName(playlistTitle)
-                                                audioViewModel.loadPlaylist(listOf(song), song)
-                                                audioViewModel.playSong(song)
-                                                safeNavigate(
-                                                    navController,
-                                                    PlayingRoute,
-                                                )
-                                            },
-                                            onLongClick = {}
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        filteredAlbums?.let {
-                            if (it.isNotEmpty() && isAlbumsButtonActive) {
-                                item {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(stringResource(Res.string.search_albums_text), style = appTypography().bodyLarge)
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                }
-                                it.forEach { album ->
-                                    item {
-                                        AlbumItem(
-                                            item = album,
-                                            modifier = Modifier.padding(bottom = 16.dp),
-                                            onClick = {
-                                                safeNavigate(navController, AlbumDetailRoute(album.id))
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        filteredArtists?.let {
-                            if (it.isNotEmpty() && isArtistsButtonActive) {
-                                item {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(stringResource(Res.string.search_artists_text), style = appTypography().bodyLarge)
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                }
-                                it.forEach { artist ->
-                                    item {
-                                        ArtistItem(
-                                            item = artist,
-                                            modifier = Modifier.padding(bottom = 16.dp),
-                                            onClick = {
-                                                safeNavigate(navController, ArtistDetailRoute(artist.id))
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        if (filteredSongs.isNullOrEmpty() && filteredAlbums.isNullOrEmpty() && filteredArtists.isNullOrEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    filteredSongs?.let {
+                        if (it.isNotEmpty() && isSongsButtonActive) {
                             item {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .weight(1f),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
-                                    Text("No results found", style = appTypography().bodyLarge)
+                                Text(stringResource(Res.string.search_songs_text), style = appTypography().bodyLarge)
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                            it.forEach { song ->
+                                item {
+                                    SongItem(
+                                        song = song,
+                                        modifier = Modifier.padding(bottom = 16.dp),
+                                        onClick = {
+                                            audioViewModel.setPlaylistName(playlistTitle)
+                                            audioViewModel.loadPlaylist(listOf(song), song)
+                                            audioViewModel.playSong(song)
+                                            safeNavigate(
+                                                navController,
+                                                PlayingRoute,
+                                            )
+                                        },
+                                        onLongClick = {}
+                                    )
                                 }
                             }
                         }
                     }
-                }
-                else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        CircularProgressIndicator()
+
+                    filteredAlbums?.let {
+                        if (it.isNotEmpty() && isAlbumsButtonActive) {
+                            item {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(stringResource(Res.string.search_albums_text), style = appTypography().bodyLarge)
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                            it.forEach { album ->
+                                item {
+                                    AlbumItem(
+                                        item = album,
+                                        modifier = Modifier.padding(bottom = 16.dp),
+                                        onClick = {
+                                            safeNavigate(navController, AlbumDetailRoute(album.id))
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    filteredArtists?.let {
+                        if (it.isNotEmpty() && isArtistsButtonActive) {
+                            item {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(stringResource(Res.string.search_artists_text), style = appTypography().bodyLarge)
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                            it.forEach { artist ->
+                                item {
+                                    ArtistItem(
+                                        item = artist,
+                                        modifier = Modifier.padding(bottom = 16.dp),
+                                        onClick = {
+                                            safeNavigate(navController, ArtistDetailRoute(artist.id))
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (filteredSongs.isNullOrEmpty() && filteredAlbums.isNullOrEmpty() && filteredArtists.isNullOrEmpty()) {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text("No results found", style = appTypography().bodyLarge)
+                            }
+                        }
                     }
                 }
             }

@@ -67,7 +67,7 @@ class AudioMetadataMapper {
             artist = artist,
             artwork = artwork,
             artworkHash = createHash(artwork),
-            year = formatYear(data.year)
+            year = if (data.year != null) formatYear(data.year) else formatYear(data.date)
         )
     }
 

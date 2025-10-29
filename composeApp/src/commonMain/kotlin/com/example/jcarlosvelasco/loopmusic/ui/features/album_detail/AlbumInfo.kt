@@ -77,7 +77,7 @@ fun AlbumInfo(
         Spacer(modifier = Modifier.height(height = 2.dp))
 
         Text(
-            "${album.artist.name} · ${albumSongs.count()} ${if (albumSongs.count() == 1) stringResource(Res.string.album_detail_song) else stringResource(Res.string.album_detail_songs)}",
+            "${album.artist.name} · ${album.year} · ${albumSongs.count()} ${if (albumSongs.count() == 1) stringResource(Res.string.album_detail_song) else stringResource(Res.string.album_detail_songs)}",
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = appTypography().bodyMedium,
