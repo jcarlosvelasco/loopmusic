@@ -40,6 +40,7 @@ class PlaylistManager(
     override fun loadPlaylists() {
         scope.launch(Dispatchers.IO) {
             val result = getPlaylists.execute()
+            log("PlaylistManager", "Loaded playlists: $result")
             _playlists.value = result
         }
     }
@@ -57,7 +58,7 @@ class PlaylistManager(
                     deletePlaylist.execute(it.id)
                 }
             } catch (e: Exception) {
-                log("MainScreenViewModel", "Error deleting playlists: ${e.message}")
+                log("PlaylistManager", "Error deleting playlists: ${e.message}")
 
                 withContext(Dispatchers.Main) {
                     _playlists.value = originalPlaylists
@@ -80,12 +81,12 @@ class PlaylistManager(
         scope.launch(Dispatchers.IO) {
             try {
                 val playlistToRename = _playlists.value?.find { it.id == playlistId }
-                log("MainScreenViewModel", "Renaming playlist '${playlistToRename?.name}' to '$newName'")
+                log("PlaylistManager", "Renaming playlist '${playlistToRename?.name}' to '$newName'")
                 playlistToRename?.let {
                     renamePlaylist.execute(playlistId, newName)
                 }
             } catch (e: Exception) {
-                log("MainScreenViewModel", "Error renaming playlist: ${e.message}")
+                log("PlaylistManager", "Error renaming playlist: ${e.message}")
 
                 withContext(Dispatchers.Main) {
                     _playlists.value = originalPlaylists
@@ -95,7 +96,7 @@ class PlaylistManager(
     }
 
     override fun removeSongsFromPlaylist(songs: Set<Song>, playlist: Playlist) {
-        log("MainScreenViewModel", "Removing ${songs.size} songs from playlist '${playlist.name}'")
+        log("PlaylistManager", "Removing ${songs.size} songs from playlist '${playlist.name}'")
         val songPathsToRemove = songs.map { it.path }.toSet()
 
         val originalPlaylists = _playlists.value?.map { it.copy(songPaths = it.songPaths.toMutableList()) }
@@ -116,7 +117,7 @@ class PlaylistManager(
                     removeSongFromPlaylist.execute(song.path, playlist.id)
                 }
             } catch (e: Exception) {
-                log("MainScreenViewModel", "Error removing songs: ${e.message}")
+                log("PlaylistManager", "Error removing songs: ${e.message}")
 
                 withContext(Dispatchers.Main) {
                     _playlists.value = originalPlaylists
@@ -166,6 +167,7 @@ class PlaylistManager(
         _playlists.value = _playlists.value?.toMutableList()?.apply {
             add(playlist)
         }
+        log("PlaylistManager", "Added playlist '${playlist.name}' to collection, id: ${playlist.id}")
     }
 
     override fun addSongsToPlaylists(songs: Set<Song>, playlists: Set<Playlist>) {
@@ -177,12 +179,12 @@ class PlaylistManager(
             if (playlist in playlists) {
                 val newPaths = songPaths.filterNot { it in playlist.songPaths }
                 if (newPaths.isNotEmpty()) {
-                    log("MainScreenViewModel", "Adding ${newPaths.size} new songs to playlist '${playlist.name}'")
+                    log("PlaylistManager", "Adding ${newPaths.size} new songs to playlist '${playlist.name} ${playlist.id}'")
                     playlist.copy(
                         songPaths = (playlist.songPaths + newPaths).toMutableList()
                     )
                 } else {
-                    log("MainScreenViewModel", "All songs already exist in playlist '${playlist.name}'")
+                    log("PlaylistManager", "All songs already exist in playlist '${playlist.name}'")
                     playlist
                 }
             } else {
@@ -193,16 +195,18 @@ class PlaylistManager(
         scope.launch(Dispatchers.IO) {
             try {
                 playlists.forEach { playlist ->
-                    val existingPaths = _playlists.value?.find { it.id == playlist.id }?.songPaths ?: emptyList()
-                    val newSongs = songs.filter { it.path !in existingPaths }
+                    val oldPaths = originalPlaylists?.find { it.id == playlist.id }?.songPaths ?: emptyList()
+                    val newSongs = songs.filter { it.path !in oldPaths }
 
+                    log("PlaylistManager", "newSongs: ${newSongs.size}")
                     if (newSongs.isNotEmpty()) {
-                        addSongsToPlaylist.execute(newSongs.toSet(), playlist.id)
+                        scope.launch(Dispatchers.IO) {
+                            addSongsToPlaylist.execute(newSongs.toSet(), playlist.id)
+                        }
                     }
                 }
             } catch (e: Exception) {
-                log("MainScreenViewModel", "Error adding songs to playlists: ${e.message}")
-
+                log("PlaylistManager", "Error adding songs to playlists: ${e.message}")
                 withContext(Dispatchers.Main) {
                     _playlists.value = originalPlaylists
                 }
