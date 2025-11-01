@@ -99,11 +99,14 @@ fun AddToPlaylistPill(
                 }) {
                     Text(stringResource(Res.string.addtoplaylist_back), style = appTypography().bodyLarge)
                 }
-                Button(onClick = {
-                    mainScreenViewModel.addSongsToPlaylists(selectedSongs, selectedPlaylists)
-                    songsViewModel.setIsPlaylistSelectionMode(false)
-                    songsViewModel.updateSelectionMode(false)
-                }) {
+                Button(
+                    onClick = {
+                        mainScreenViewModel.addSongsToPlaylists(selectedSongs, selectedPlaylists)
+                        songsViewModel.setIsPlaylistSelectionMode(false)
+                        songsViewModel.updateSelectionMode(false)
+                    },
+                    enabled = selectedPlaylists.isNotEmpty() && selectedSongs.isNotEmpty()
+                ) {
                     Text(stringResource(Res.string.addtoplaylist_add), style = appTypography().bodyLarge)
                 }
             }

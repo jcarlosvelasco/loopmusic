@@ -18,6 +18,7 @@ import com.example.jcarlosvelasco.loopmusic.presentation.songs.SongsViewModel
 import com.example.jcarlosvelasco.loopmusic.ui.theme.appTypography
 import loopmusic.composeapp.generated.resources.Res
 import loopmusic.composeapp.generated.resources.song_selection_addtoplaylist
+import loopmusic.composeapp.generated.resources.song_selection_removefromplaylist
 import loopmusic.composeapp.generated.resources.song_selection_select
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -83,20 +84,26 @@ fun SongSelectionPill(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Button(onClick = {
-                    songsViewModel.setIsPlaylistSelectionMode(true)
-                }) {
+                Button(
+                    onClick = {
+                        songsViewModel.setIsPlaylistSelectionMode(true)
+                    },
+                    enabled = count > 0
+                ) {
                     Text(stringResource(Res.string.song_selection_addtoplaylist), style = appTypography().bodyLarge)
                 }
 
                 if (allowRemoveFromPlaylist) {
-                    Button(onClick = {
-                        fromPlaylist?.let {
-                            onRemoveFromPlaylist(selectedSongs, fromPlaylist)
-                            songsViewModel.updateSelectionMode(false)
-                        }
-                    }) {
-                        Text("Remove from playlist", style = appTypography().bodyLarge)
+                    Button(
+                        onClick = {
+                            fromPlaylist?.let {
+                                onRemoveFromPlaylist(selectedSongs, fromPlaylist)
+                                songsViewModel.updateSelectionMode(false)
+                            }
+                        },
+                        enabled = count > 0
+                    ) {
+                        Text(stringResource(Res.string.song_selection_removefromplaylist), style = appTypography().bodyLarge)
                     }
                 }
             }

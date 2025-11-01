@@ -20,8 +20,9 @@ fun AlertDialogWithTextField(
     dialogTitle: String,
     dialogText: String,
     icon: ImageVector,
+    initialValue: String = ""
 ) {
-    var textFieldValue by remember { mutableStateOf("") }
+    var textFieldValue by remember { mutableStateOf(initialValue) }
 
     AlertDialog(
         icon = {

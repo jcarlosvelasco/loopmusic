@@ -80,11 +80,14 @@ fun PlaylistSelectionPill(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Button(onClick = {
-                    selectedPlaylists.let {
-                        playlistScreenViewModel.setIsRemovePlaylistModalOpen(true)
-                    }
-                }) {
+                Button(
+                    onClick = {
+                        selectedPlaylists.let {
+                            playlistScreenViewModel.setIsRemovePlaylistModalOpen(true)
+                        }
+                    },
+                    enabled = selectedPlaylists.isNotEmpty()
+                ) {
                     Text(stringResource(Res.string.playlist_select_delete), style = appTypography().bodyLarge)
                 }
 
