@@ -11,8 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
+import kotlin.time.ExperimentalTime
 
 class SpotifyApiService(
     private val httpClient: HttpClientType,
@@ -23,8 +23,9 @@ class SpotifyApiService(
     private var accessToken: String? = null
     private var tokenExpirationTime: Long = 0
 
+    @OptIn(ExperimentalTime::class)
     private suspend fun getAccessToken(): String {
-        val currentTime = Clock.System.now().toEpochMilliseconds()
+        val currentTime = kotlin.time.Clock.System.now().toEpochMilliseconds()
         if (accessToken != null && currentTime < tokenExpirationTime) {
             return accessToken!!
         }
@@ -48,7 +49,7 @@ class SpotifyApiService(
         val tokenResponse = json.decodeFromString<TokenResponse>(response.body)
 
         accessToken = tokenResponse.access_token
-        tokenExpirationTime = Clock.System.now().toEpochMilliseconds() +
+        tokenExpirationTime = kotlin.time.Clock.System.now().toEpochMilliseconds() +
                 (tokenResponse.expires_in - 60) * 1000
 
         return accessToken!!

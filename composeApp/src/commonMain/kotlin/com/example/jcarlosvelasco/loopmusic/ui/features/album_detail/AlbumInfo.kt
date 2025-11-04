@@ -2,6 +2,7 @@ package com.example.jcarlosvelasco.loopmusic.ui.features.album_detail
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -72,15 +73,29 @@ fun AlbumInfo(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = appTypography().headlineMedium,
+            modifier = if (isLandscape) Modifier.widthIn(max = 250.dp).basicMarquee() else Modifier.basicMarquee()
         )
 
         Spacer(modifier = Modifier.height(height = 2.dp))
 
         Text(
-            "${album.artist.name} · ${album.year} · ${albumSongs.count()} ${if (albumSongs.count() == 1) stringResource(Res.string.album_detail_song) else stringResource(Res.string.album_detail_songs)}",
+            text = buildString {
+                append(album.artist.name)
+                if (album.year != null) {
+                    append(" · ${album.year}")
+                }
+                append(" · ${albumSongs.count()} ")
+                append(
+                    if (albumSongs.count() == 1)
+                        stringResource(Res.string.album_detail_song)
+                    else
+                        stringResource(Res.string.album_detail_songs)
+                )
+            },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = appTypography().bodyMedium,
+            modifier = if (isLandscape) Modifier.widthIn(max = 250.dp).basicMarquee() else Modifier.basicMarquee()
         )
 
         Spacer(modifier = Modifier.height(height = 12.dp))

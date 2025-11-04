@@ -39,54 +39,55 @@ actual fun MediaFoldersScreen(
     val mediaFolders by viewModel.mediaFolders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
-    PlatformBox {
-        WithOrientation { isLandscape ->
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                stringResource(Res.string.media_folder),
-                                style = appTypography().headlineLarge
-                            )
-                        },
-                        navigationIcon = {
-                            if (viewModel.fromSettings) {
-                                IconButton(onClick = { safePopBackStack(navController) }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back"
-                                    )
-                                }
-                            }
-                        },
-                        colors = TopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.background,
-                            titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
-                            navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
-                            actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
-                            scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
-                        ),
-                        actions = {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 4.dp
+    WithOrientation { isLandscape ->
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(Res.string.media_folder),
+                            style = appTypography().headlineLarge
+                        )
+                    },
+                    navigationIcon = {
+                        if (viewModel.fromSettings) {
+                            IconButton(onClick = { safePopBackStack(navController) }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
                                 )
                             }
-                        },
-                        modifier = Modifier
-                            .windowInsetsPadding(WindowInsets.safeDrawing)
-                            .padding(end = 16.dp)
-                    )
-                },
-            ) { innerPadding ->
+                        }
+                    },
+                    colors = TopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                        navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                        titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                        actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                        subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                    ),
+                    actions = {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(24.dp),
+                                strokeWidth = 4.dp
+                            )
+                        }
+                    },
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 4.dp)
+                    .fillMaxSize(),
+            ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 36.dp)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     LazyColumn(
                         modifier = Modifier.weight(1f),

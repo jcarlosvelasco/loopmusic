@@ -19,7 +19,7 @@ import com.example.jcarlosvelasco.loopmusic.domain.model.Song
 import com.example.jcarlosvelasco.loopmusic.presentation.folders.FoldersScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.main.SongsLoadingStatus
 import com.example.jcarlosvelasco.loopmusic.presentation.playing.PlayingScreenViewModel
-import com.example.jcarlosvelasco.loopmusic.ui.components.ScreenWithPlayingPill
+import com.example.jcarlosvelasco.loopmusic.ui.components.ConditionalPlayingPill
 import com.example.jcarlosvelasco.loopmusic.ui.features.folder_songs.FolderItem
 import com.example.jcarlosvelasco.loopmusic.ui.features.playing.MediaState
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.FolderSongsRoute
@@ -32,6 +32,7 @@ import loopmusic.composeapp.generated.resources.folders_no_folders
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoldersScreen(
     navController: NavHostController,
@@ -48,114 +49,130 @@ fun FoldersScreen(
 ) {
     val folders by viewModel.folders.collectAsStateWithLifecycle()
 
-    Scaffold {
-        ScreenWithPlayingPill(
-            navController = navController,
-            selectedScreenFeatures = selectedScreenFeatures,
-            playingScreenViewModel = playingScreenViewModel,
-            modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding(),
-            selectedFeature = SCREEN_FEATURES.Folders,
-            currentPlayingSong = currentPlayingSong,
-            mediaState = mediaState,
-            onPlayPauseClick = onPlayPauseClick
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                if (fromOthers) {
-                    IconButton(
-                        onClick = { safePopBackStack(navController) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back"
+                        Text(
+                            stringResource(Res.string.folders_header),
+                            style = appTypography().headlineLarge
                         )
+                        if (loadingStatus != SongsLoadingStatus.DONE) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 4.dp
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.padding(12.dp))
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        stringResource(Res.string.folders_header),
-                        style = appTypography().headlineLarge
-                    )
-                    if (loadingStatus != SongsLoadingStatus.DONE) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 4.dp
-                        )
+                },
+                navigationIcon = {
+                    if (fromOthers) {
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
+                            )
+                        }
                     }
-                }
-
-                Spacer(modifier = Modifier.padding(12.dp))
-
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    when {
-                        folders == null -> {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillParentMaxSize()
-                                        .wrapContentHeight(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
-                                }
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                )
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 12.dp)
+                .fillMaxSize(),
+        ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                when {
+                    folders == null -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
                             }
                         }
+                    }
 
-                        folders!!.isEmpty() -> {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillParentMaxSize()
-                                        .wrapContentHeight(),
-                                    contentAlignment = Alignment.Center
+                    folders!!.isEmpty() -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            "📁",
-                                            style = appTypography().headlineLarge,
-                                            modifier = Modifier.padding(bottom = 8.dp)
-                                        )
-                                        Text(
-                                            stringResource(Res.string.folders_no_folders),
-                                            style = appTypography().bodyMedium
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        else -> {
-                            for (folder in folders) {
-                                item {
-                                    FolderItem(
-                                        onClick = { safeNavigate(navController, FolderSongsRoute(folder.path)) },
-                                        folder = folder
+                                    Text(
+                                        "📁",
+                                        style = appTypography().headlineLarge,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    Text(
+                                        stringResource(Res.string.folders_no_folders),
+                                        style = appTypography().bodyMedium
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    else -> {
+                        for (folder in folders) {
                             item {
-                                Spacer(modifier = Modifier.height(spacerHeight))
+                                FolderItem(
+                                    onClick = { safeNavigate(navController, FolderSongsRoute(folder.path)) },
+                                    folder = folder
+                                )
                             }
+                        }
+                        item {
+                            Spacer(modifier = Modifier.height(spacerHeight))
                         }
                     }
                 }
             }
+
+            ConditionalPlayingPill(
+                navController = navController,
+                selectedScreenFeatures = selectedScreenFeatures,
+                playingScreenViewModel = playingScreenViewModel,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp),
+                selectedFeature = SCREEN_FEATURES.Folders,
+                currentPlayingSong = currentPlayingSong,
+                mediaState = mediaState,
+                onPlayPauseClick = onPlayPauseClick
+            )
         }
     }
 }

@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +33,7 @@ import com.example.jcarlosvelasco.loopmusic.utils.let2
 import com.example.jcarlosvelasco.loopmusic.utils.log
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDetailScreen(
     navController: NavHostController,
@@ -75,25 +74,40 @@ fun PlaylistDetailScreen(
     }
 
     WithOrientation { isLandscape ->
-        Scaffold {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
+                            )
+                        }
+                    },
+                    colors = TopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                        navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                        titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                        actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                        subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                    )
+                )
+            }
+        ) { innerPadding ->
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .safeContentPadding()
-                    .padding(top = 16.dp)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .fillMaxSize(),
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    IconButton(
-                        onClick = { safePopBackStack(navController) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back"
-                        )
-                    }
-
                     Spacer(modifier = Modifier.height(12.dp))
 
                     LazyColumn(
@@ -192,7 +206,7 @@ fun PlaylistDetailScreen(
 
                 AnimatedVisibility(
                     visible = isSelectionMode,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
                 ) {
                     SongSelectionPill(
                         songsViewModel = songsViewModel,
@@ -207,7 +221,7 @@ fun PlaylistDetailScreen(
 
                 AnimatedVisibility(
                     visible = !isSelectionMode && currentPlayingSong != null,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
                 ) {
                     currentPlayingSong?.let { song ->
                         PlayingPill(

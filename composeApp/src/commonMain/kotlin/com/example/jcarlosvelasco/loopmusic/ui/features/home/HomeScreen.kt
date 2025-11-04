@@ -30,6 +30,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun HomeScreen(
@@ -59,22 +60,15 @@ fun HomeScreen(
         }
     }
 
-    Scaffold {
-        Column(
-            modifier = Modifier
-                .safeContentPadding()
-                .fillMaxSize()
-        ) {
-            LazyColumn(
-                modifier = Modifier.weight(1f)
-            ) {
-                item {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 36.dp)
                     ) {
                         Text(
                             "Loop",
@@ -101,8 +95,28 @@ fun HomeScreen(
                             }
                         }
                     }
-                }
-
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                )
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 20.dp)
+                .fillMaxSize(),
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
                 if (!playlistLoadingState) {
                     item {
                         Column(
@@ -145,22 +159,6 @@ fun HomeScreen(
                         }
                     }
                 }
-
-                item {
-                    //TODO: STILL SOME SPACE CROPPED
-                    Spacer(modifier = Modifier.height(spacerHeight))
-                }
-
-                /*
-        Text(
-            text = "Recently played",
-            style = appTypography().headlineMedium,
-        )
-        
-        Text(
-            text = "Last added",
-            style = appTypography().headlineMedium,
-        )*/
             }
         }
     }

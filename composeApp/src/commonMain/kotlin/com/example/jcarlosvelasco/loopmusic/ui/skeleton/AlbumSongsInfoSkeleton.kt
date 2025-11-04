@@ -14,7 +14,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun AlbumSongsInfoSkeleton() {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         ShimmerTextSkeleton(
             textStyle = appTypography().headlineMedium,

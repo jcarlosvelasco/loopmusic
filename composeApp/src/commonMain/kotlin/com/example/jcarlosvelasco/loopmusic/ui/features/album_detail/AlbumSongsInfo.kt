@@ -27,7 +27,7 @@ fun AlbumSongsInfo(
     navController: NavHostController,
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(stringResource(Res.string.albumsongsinfo_songs), style = appTypography().headlineMedium)
 
@@ -37,7 +37,7 @@ fun AlbumSongsInfo(
             for (song in albumSongs) {
                 SongItem(
                     song = song,
-                    modifier = Modifier.padding(bottom = 16.dp),
+                    modifier = Modifier.padding(vertical = 8.dp),
                     onClick = {
                         audioViewModel.setPlaylistName(album.name)
                         audioViewModel.loadPlaylist(albumSongs, song)

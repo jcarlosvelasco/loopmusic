@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +16,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.example.jcarlosvelasco.loopmusic.domain.model.Album
+import com.example.jcarlosvelasco.loopmusic.domain.model.Song
 import com.example.jcarlosvelasco.loopmusic.presentation.album_detail.AlbumDetailScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.audio.AudioViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.main.MainScreenViewModel
@@ -32,18 +32,17 @@ import com.example.jcarlosvelasco.loopmusic.ui.skeleton.AlbumSongsInfoSkeleton
 import com.example.jcarlosvelasco.loopmusic.utils.let2
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailScreen(
     albumId: Long,
     navController: NavHostController,
     viewModel: AlbumDetailScreenViewModel = koinViewModel(),
-    mainViewModel: MainScreenViewModel,
+    songs: List<Song>?,
+    albums: List<Album>?,
     audioViewModel: AudioViewModel,
     playingScreenViewModel: PlayingScreenViewModel,
 ) {
-    val songs by mainViewModel.songs.collectAsStateWithLifecycle()
-    val albums by mainViewModel.albums.collectAsStateWithLifecycle()
-
     val album by viewModel.album.collectAsStateWithLifecycle()
     val albumSongs by viewModel.songs.collectAsStateWithLifecycle()
 
@@ -65,25 +64,40 @@ fun AlbumDetailScreen(
     }
 
     WithOrientation { isLandscape ->
-        Scaffold {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
+                            )
+                        }
+                    },
+                    colors = TopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                        navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                        titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                        actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                        subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                    )
+                )
+            }
+        ) { innerPadding ->
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .safeContentPadding()
-                    .padding(top = 16.dp)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .fillMaxSize(),
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    IconButton(
-                        onClick = { safePopBackStack(navController) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back"
-                        )
-                    }
-
                     Spacer(modifier = Modifier.height(12.dp))
 
                     LazyColumn(
@@ -172,10 +186,10 @@ fun AlbumDetailScreen(
                         onPlayPauseClick = { audioViewModel.onPlayPauseClick() },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
+                            .padding(bottom = 8.dp)
                             .onGloballyPositioned {
-                                playingScreenViewModel.setPlayingPillHeight(with(density) {
-                                    it.size.height.toDp()
-                                }
+                                playingScreenViewModel.setPlayingPillHeight(
+                                    with(density) { it.size.height.toDp() }
                                 )
                             }
                     )

@@ -16,7 +16,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.jcarlosvelasco.loopmusic.domain.model.SCREEN_FEATURES
 import com.example.jcarlosvelasco.loopmusic.presentation.features.FeaturesViewModel
-import com.example.jcarlosvelasco.loopmusic.ui.PlatformBox
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.safePopBackStack
 import com.example.jcarlosvelasco.loopmusic.ui.theme.appTypography
 import loopmusic.composeapp.generated.resources.*
@@ -31,44 +30,45 @@ fun SettingsTabsScreen(
 ) {
     val currentScreenFeatures by featuresViewModel.selectedScreenFeatures.collectAsStateWithLifecycle()
 
-    PlatformBox {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            stringResource(Res.string.tabs_header),
-                            style = appTypography().headlineLarge
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        stringResource(Res.string.tabs_header),
+                        style = appTypography().headlineLarge
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { safePopBackStack(navController) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Go back"
                         )
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = { safePopBackStack(navController) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Abrir ajustes"
-                            )
-                        }
-                    },
-                    colors = TopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
-                        navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
-                        actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
-                        scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
-                    ),
-                    modifier = Modifier
-                        .windowInsetsPadding(WindowInsets.safeDrawing)
-                )
-            },
-        ) { innerPadding ->
+                    }
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                ),
+            )
+        },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 4.dp)
+                .fillMaxSize(),
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .padding(horizontal = 16.dp)
             ) {
                 DummyCustomBottomNavigationBar(
                     navigationTabs = featuresViewModel.selectedNavigationTabs
@@ -81,7 +81,7 @@ fun SettingsTabsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             stringResource(Res.string.tabs_add),
-                            style = appTypography().bodyLarge,
+                            style = appTypography().headlineMedium,
                         )
                         Column {
                             it.forEach { feature ->
@@ -116,7 +116,7 @@ fun SettingsTabsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             stringResource(Res.string.tabs_current_tabs),
-                            style = appTypography().bodyLarge,
+                            style = appTypography().headlineMedium,
                         )
                         Column {
                             it.forEachIndexed { index, feature ->

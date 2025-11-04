@@ -32,7 +32,7 @@ fun ArtistSongsInfo(
     val selectedSongs by viewModel.selectedSongs.collectAsStateWithLifecycle()
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(stringResource(Res.string.artist_detail_songs), style = appTypography().headlineMedium)
 

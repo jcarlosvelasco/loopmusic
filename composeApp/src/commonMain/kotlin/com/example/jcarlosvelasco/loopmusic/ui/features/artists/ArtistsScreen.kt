@@ -17,7 +17,7 @@ import com.example.jcarlosvelasco.loopmusic.domain.model.SCREEN_FEATURES
 import com.example.jcarlosvelasco.loopmusic.domain.model.Song
 import com.example.jcarlosvelasco.loopmusic.presentation.main.SongsLoadingStatus
 import com.example.jcarlosvelasco.loopmusic.presentation.playing.PlayingScreenViewModel
-import com.example.jcarlosvelasco.loopmusic.ui.components.ScreenWithPlayingPill
+import com.example.jcarlosvelasco.loopmusic.ui.components.ConditionalPlayingPill
 import com.example.jcarlosvelasco.loopmusic.ui.features.playing.MediaState
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.ArtistDetailRoute
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.safeNavigate
@@ -27,6 +27,7 @@ import loopmusic.composeapp.generated.resources.Res
 import loopmusic.composeapp.generated.resources.artists_header
 import org.jetbrains.compose.resources.stringResource
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistsScreen(
     navController: NavHostController,
@@ -41,130 +42,146 @@ fun ArtistsScreen(
     mediaState: MediaState,
     onPlayPauseClick: () -> Unit,
 ) {
-    Scaffold {
-        ScreenWithPlayingPill(
-            navController = navController,
-            selectedScreenFeatures = selectedScreenFeatures,
-            playingScreenViewModel = playingScreenViewModel,
-            modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding(),
-            selectedFeature = SCREEN_FEATURES.Artists,
-            mediaState = mediaState,
-            onPlayPauseClick = onPlayPauseClick,
-            currentPlayingSong = currentPlayingSong
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                if (fromOthers) {
-                    IconButton(
-                        onClick = { safePopBackStack(navController) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back"
+                        Text(
+                            stringResource(Res.string.artists_header),
+                            style = appTypography().headlineLarge
                         )
+                        if (loadingStatus != SongsLoadingStatus.DONE) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 4.dp
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.padding(12.dp))
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        stringResource(Res.string.artists_header),
-                        style = appTypography().headlineLarge
-                    )
-                    if (loadingStatus != SongsLoadingStatus.DONE) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 4.dp
-                        )
+                },
+                navigationIcon = {
+                    if (fromOthers) {
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
+                            )
+                        }
                     }
-                }
-
-                Spacer(modifier = Modifier.padding(12.dp))
-
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    when {
-                        artists == null -> {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillParentMaxSize()
-                                        .wrapContentHeight(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
-                                }
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                )
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 4.dp)
+                .fillMaxSize(),
+        ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                when {
+                    artists == null -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
                             }
                         }
+                    }
 
-                        artists.isEmpty() && loadingStatus == SongsLoadingStatus.LOADING -> {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillParentMaxSize()
-                                        .wrapContentHeight(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
-                                }
+                    artists.isEmpty() && loadingStatus == SongsLoadingStatus.LOADING -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
                             }
                         }
+                    }
 
-                        artists.isEmpty() && loadingStatus == SongsLoadingStatus.DONE -> {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillParentMaxSize()
-                                        .wrapContentHeight(),
-                                    contentAlignment = Alignment.Center
+                    artists.isEmpty() && loadingStatus == SongsLoadingStatus.DONE -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            "📁",
-                                            style = appTypography().headlineLarge,
-                                            modifier = Modifier.padding(bottom = 8.dp)
-                                        )
-                                        Text(
-                                            "No artists added",
-                                            style = appTypography().bodyMedium
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        else -> {
-                            for (item in artists) {
-                                item {
-                                    ArtistItem(
-                                        item,
-                                        Modifier.padding(bottom = 16.dp),
-                                        onClick = {
-                                            safeNavigate(navController, ArtistDetailRoute(item.id))
-                                        }
+                                    Text(
+                                        "📁",
+                                        style = appTypography().headlineLarge,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    Text(
+                                        "No artists added",
+                                        style = appTypography().bodyMedium
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    else -> {
+                        for (item in artists) {
                             item {
-                                Spacer(modifier = Modifier.height(spacerHeight))
+                                ArtistItem(
+                                    item,
+                                    Modifier.padding(vertical = 8.dp),
+                                    onClick = {
+                                        safeNavigate(navController, ArtistDetailRoute(item.id))
+                                    }
+                                )
                             }
+                        }
+                        item {
+                            Spacer(modifier = Modifier.height(spacerHeight))
                         }
                     }
                 }
             }
+
+            ConditionalPlayingPill(
+                navController = navController,
+                selectedScreenFeatures = selectedScreenFeatures,
+                playingScreenViewModel = playingScreenViewModel,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp),
+                selectedFeature = SCREEN_FEATURES.Artists,
+                currentPlayingSong = currentPlayingSong,
+                mediaState = mediaState,
+                onPlayPauseClick = onPlayPauseClick
+            )
         }
     }
 }

@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,7 +39,7 @@ import com.example.jcarlosvelasco.loopmusic.ui.skeleton.FeaturedArtistSongsSkele
 import com.example.jcarlosvelasco.loopmusic.utils.let2
 import com.example.jcarlosvelasco.loopmusic.utils.log
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistDetailScreen(
     artistId: Long,
@@ -70,10 +68,14 @@ fun ArtistDetailScreen(
     val isSelectionMode by songsViewModel.isSelectionMode.collectAsStateWithLifecycle()
     val isPlaylistSelectionMode by songsViewModel.isPlaylistSelectionMode.collectAsStateWithLifecycle()
 
-    BackHandler {
+    val onBackAction = {
         songsViewModel.setIsPlaylistSelectionMode(false)
         songsViewModel.updateSelectionMode(false)
         safePopBackStack(navController)
+    }
+
+    BackHandler {
+        onBackAction()
     }
 
     LaunchedEffect(artistId) {
@@ -88,29 +90,39 @@ fun ArtistDetailScreen(
     }
 
     WithOrientation { isLandscape ->
-        Scaffold {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        IconButton(onClick = onBackAction) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
+                            )
+                        }
+                    },
+                    colors = TopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                        navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                        titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                        actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                        subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                    )
+                )
+            }
+        ) { innerPadding ->
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .safeContentPadding()
-                    .padding(top = 16.dp)
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 4.dp)
+                    .fillMaxSize(),
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    IconButton(
-                        onClick = {
-                            songsViewModel.setIsPlaylistSelectionMode(false)
-                            songsViewModel.updateSelectionMode(false)
-                            safePopBackStack(navController)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back"
-                        )
-                    }
-
                     Spacer(modifier = Modifier.height(12.dp))
 
                     LazyColumn(
@@ -159,6 +171,8 @@ fun ArtistDetailScreen(
                                             ArtistAlbumsInfo(albums = it, navController = navController)
                                         } ?: ArtistAlbumsInfoSkeleton()
 
+                                        Spacer(modifier = Modifier.height(20.dp))
+
                                         let2(artist, artistSongs) { a, s ->
                                             ArtistSongsInfo(
                                                 artistName = a.name,
@@ -172,6 +186,8 @@ fun ArtistDetailScreen(
                                                 }
                                             )
                                         } ?: ArtistSongsInfoSkeleton()
+
+                                        Spacer(modifier = Modifier.height(20.dp))
 
                                         let2(featuredSongs, artist) { f, a ->
                                             if (f.isEmpty()) return@let2
@@ -227,7 +243,7 @@ fun ArtistDetailScreen(
                                     ArtistAlbumsInfo(albums = it, navController = navController)
                                 } ?: ArtistAlbumsInfoSkeleton()
 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(20.dp))
 
                                 let2(artist, artistSongs) { a, s ->
                                     ArtistSongsInfo(
@@ -243,7 +259,7 @@ fun ArtistDetailScreen(
                                     )
                                 } ?: ArtistSongsInfoSkeleton()
 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(20.dp))
 
                                 let2(featuredSongs, artist) { f, a ->
                                     if (f.isEmpty()) return@let2
@@ -269,7 +285,7 @@ fun ArtistDetailScreen(
 
                 AnimatedVisibility(
                     visible = currentPlayingSong != null && !isSelectionMode && !isPlaylistSelectionMode,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                 ) {
                     currentPlayingSong?.let { song ->
                         PlayingPill(
@@ -292,14 +308,14 @@ fun ArtistDetailScreen(
                 selectedScreenFeatures?.let { features ->
                     AnimatedVisibility(
                         visible = isSelectionMode && !isPlaylistSelectionMode && !features.contains(SCREEN_FEATURES.Songs),
-                        modifier = Modifier.align(Alignment.BottomCenter)
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                     ) {
                         SongSelectionPill()
                     }
 
                     AnimatedVisibility(
                         visible = isPlaylistSelectionMode && !features.contains(SCREEN_FEATURES.Songs),
-                        modifier = Modifier.align(Alignment.BottomCenter)
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                     ) {
                         AddToPlaylistPill()
                     }

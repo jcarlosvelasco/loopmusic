@@ -23,7 +23,7 @@ import com.example.jcarlosvelasco.loopmusic.presentation.main.SongsLoadingStatus
 import com.example.jcarlosvelasco.loopmusic.presentation.playing.PlayingScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.songs.SongsViewModel
 import com.example.jcarlosvelasco.loopmusic.ui.components.AddToPlaylistPill
-import com.example.jcarlosvelasco.loopmusic.ui.components.ScreenWithPlayingPill
+import com.example.jcarlosvelasco.loopmusic.ui.components.ConditionalPlayingPill
 import com.example.jcarlosvelasco.loopmusic.ui.components.SongSelectionPill
 import com.example.jcarlosvelasco.loopmusic.ui.features.playing.MediaState
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.PlayingRoute
@@ -37,7 +37,7 @@ import loopmusic.composeapp.generated.resources.songs_no_songs
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SongsScreen(
     navController: NavHostController,
@@ -59,50 +59,22 @@ fun SongsScreen(
     val selectedSongs by viewModel.selectedSongs.collectAsStateWithLifecycle()
     val isPlaylistSelectionMode by viewModel.isPlaylistSelectionMode.collectAsStateWithLifecycle()
 
+    val onBackAction = {
+        viewModel.setIsPlaylistSelectionMode(false)
+        viewModel.updateSelectionMode(false)
+        safePopBackStack(navController)
+    }
+
     if (fromOthers) {
         BackHandler {
-            viewModel.setIsPlaylistSelectionMode(false)
-            viewModel.updateSelectionMode(false)
-            safePopBackStack(navController)
+            onBackAction()
         }
     }
 
-    Scaffold {
-        ScreenWithPlayingPill(
-            navController = navController,
-            selectedScreenFeatures = selectedScreenFeatures,
-            playingScreenViewModel = playingScreenViewModel,
-            modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding(),
-            selectedFeature = SCREEN_FEATURES.Songs,
-            condition = !isSelectionMode,
-            currentPlayingSong = currentPlayingSong,
-            mediaState = mediaState,
-            onPlayPauseClick = onPlayPauseClick
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    if (fromOthers) {
-                        IconButton(
-                            onClick = {
-                                viewModel.setIsPlaylistSelectionMode(false)
-                                viewModel.updateSelectionMode(false)
-                                safePopBackStack(navController)
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Go back"
-                            )
-                        }
-                        Spacer(modifier = Modifier.padding(12.dp))
-                    }
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -120,128 +92,167 @@ fun SongsScreen(
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        when {
-                            songs == null -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillParentMaxSize()
-                                            .wrapContentHeight(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator()
-                                    }
-                                }
+                },
+                navigationIcon = {
+                    if (fromOthers) {
+                        IconButton(onClick = onBackAction) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                )
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 4.dp)
+                .fillMaxSize(),
+        ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                when {
+                    songs == null -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
                             }
+                        }
+                    }
 
-                            songs.isEmpty() && loadingStatus == SongsLoadingStatus.LOADING -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillParentMaxSize()
-                                            .wrapContentHeight(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator()
-                                    }
-                                }
+                    songs.isEmpty() && loadingStatus == SongsLoadingStatus.LOADING -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
                             }
+                        }
+                    }
 
-                            songs.isEmpty() && loadingStatus == SongsLoadingStatus.DONE -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillParentMaxSize()
-                                            .wrapContentHeight(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(
-                                                "📁",
-                                                style = appTypography().headlineLarge,
-                                                modifier = Modifier.padding(bottom = 8.dp)
-                                            )
-                                            Text(
-                                                stringResource(Res.string.songs_no_songs),
-                                                style = appTypography().bodyMedium
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            else -> {
-                                for (song in songs) {
-                                    item {
-                                        SongItem(
-                                            song,
-                                            Modifier.padding(vertical = 8.dp),
-                                            isSelected = selectedSongs.contains(song),
-                                            onClick = {
-                                                if (isSelectionMode) {
-                                                    if (viewModel.isSongSelected(song)) {
-                                                        viewModel.removeSongFromSelected(song)
-                                                    } else {
-                                                        viewModel.addSongToSelected(song)
-                                                    }
-                                                } else {
-                                                    onPlaySong(playlistTitle, songs, song)
-                                                    safeNavigate(
-                                                        navController,
-                                                        PlayingRoute,
-                                                    )
-                                                }
-                                            },
-                                            isSelectionMode = isSelectionMode,
-                                            onLongClick = {
-                                                if (!isSelectionMode) {
-                                                    viewModel.updateSelectionMode(true)
-                                                    viewModel.addSongToSelected(song)
-                                                } else {
-                                                    if (viewModel.isSongSelected(song)) {
-                                                        viewModel.removeSongFromSelected(song)
-                                                    } else {
-                                                        viewModel.addSongToSelected(song)
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                                item {
-                                    Spacer(modifier = Modifier.height(8.dp + spacerHeight))
+                    songs.isEmpty() && loadingStatus == SongsLoadingStatus.DONE -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillParentMaxSize()
+                                    .wrapContentHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        "📁",
+                                        style = appTypography().headlineLarge,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    Text(
+                                        stringResource(Res.string.songs_no_songs),
+                                        style = appTypography().bodyMedium
+                                    )
                                 }
                             }
                         }
                     }
-                }
 
-                selectedScreenFeatures?.let { features ->
-                    AnimatedVisibility(
-                        visible = isSelectionMode && !isPlaylistSelectionMode && !features.contains(SCREEN_FEATURES.Songs),
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    ) {
-                        SongSelectionPill()
-                    }
-
-                    AnimatedVisibility(
-                        visible = isPlaylistSelectionMode && !features.contains(SCREEN_FEATURES.Songs),
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    ) {
-                        AddToPlaylistPill()
+                    else -> {
+                        for (song in songs) {
+                            item {
+                                SongItem(
+                                    song,
+                                    Modifier.padding(vertical = 8.dp),
+                                    isSelected = selectedSongs.contains(song),
+                                    onClick = {
+                                        if (isSelectionMode) {
+                                            if (viewModel.isSongSelected(song)) {
+                                                viewModel.removeSongFromSelected(song)
+                                            } else {
+                                                viewModel.addSongToSelected(song)
+                                            }
+                                        } else {
+                                            onPlaySong(playlistTitle, songs, song)
+                                            safeNavigate(
+                                                navController,
+                                                PlayingRoute,
+                                            )
+                                        }
+                                    },
+                                    isSelectionMode = isSelectionMode,
+                                    onLongClick = {
+                                        if (!isSelectionMode) {
+                                            viewModel.updateSelectionMode(true)
+                                            viewModel.addSongToSelected(song)
+                                        } else {
+                                            if (viewModel.isSongSelected(song)) {
+                                                viewModel.removeSongFromSelected(song)
+                                            } else {
+                                                viewModel.addSongToSelected(song)
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp + spacerHeight))
+                        }
                     }
                 }
             }
+
+
+            selectedScreenFeatures?.let { features ->
+                AnimatedVisibility(
+                    visible = isSelectionMode && !isPlaylistSelectionMode && !features.contains(SCREEN_FEATURES.Songs),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    SongSelectionPill()
+                }
+
+                AnimatedVisibility(
+                    visible = isPlaylistSelectionMode && !features.contains(SCREEN_FEATURES.Songs),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    AddToPlaylistPill()
+                }
+            }
+
+            ConditionalPlayingPill(
+                navController = navController,
+                selectedScreenFeatures = selectedScreenFeatures,
+                playingScreenViewModel = playingScreenViewModel,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp),
+                selectedFeature = SCREEN_FEATURES.Songs,
+                condition = !isSelectionMode,
+                currentPlayingSong = currentPlayingSong,
+                mediaState = mediaState,
+                onPlayPauseClick = onPlayPauseClick
+            )
         }
     }
 }

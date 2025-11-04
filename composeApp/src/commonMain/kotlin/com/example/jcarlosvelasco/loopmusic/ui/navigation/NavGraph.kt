@@ -275,10 +275,14 @@ fun NavGraphBuilder.albumDetailRoute(
 ) {
     composable<AlbumDetailRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<AlbumDetailRoute>()
+        val songs by mainScreenViewModel.songs.collectAsStateWithLifecycle()
+        val albums by mainScreenViewModel.albums.collectAsStateWithLifecycle()
+
         AlbumDetailScreen(
             navController = navController,
             albumId = route.albumId,
-            mainViewModel = mainScreenViewModel,
+            songs = songs,
+            albums = albums,
             audioViewModel = audioViewModel,
             playingScreenViewModel = playingScreenViewModel
         )

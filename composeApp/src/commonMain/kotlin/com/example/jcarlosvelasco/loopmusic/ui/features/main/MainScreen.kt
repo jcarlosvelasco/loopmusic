@@ -1,7 +1,10 @@
 package com.example.jcarlosvelasco.loopmusic.ui.features.main
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,7 +25,6 @@ import com.example.jcarlosvelasco.loopmusic.presentation.playlist_selection.Play
 import com.example.jcarlosvelasco.loopmusic.presentation.playlists.PlaylistsViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.search.SearchScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.songs.SongsViewModel
-import com.example.jcarlosvelasco.loopmusic.ui.PlatformBox
 import com.example.jcarlosvelasco.loopmusic.ui.components.AddToPlaylistPill
 import com.example.jcarlosvelasco.loopmusic.ui.components.PlaylistSelectionPill
 import com.example.jcarlosvelasco.loopmusic.ui.components.SongSelectionPill
@@ -86,132 +88,136 @@ fun MainScreen(
 
     val spacerHeight = playingPillHeight + customNavigationBarHeight
 
-    PlatformBox {
-        Scaffold {
+
+    Scaffold { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            when (selectedTab) {
+                NavigationTab.HOME -> HomeScreen(
+                    navController,
+                    loadingStatus,
+                    spacerHeight = spacerHeight,
+                    audioViewModel = audioViewModel
+                )
+
+                NavigationTab.SONGS -> SongsScreen(
+                    navController = navController,
+                    songs,
+                    songsListState,
+                    loadingStatus,
+                    spacerHeight = spacerHeight,
+                    selectedScreenFeatures = selectedScreenFeatures?.toSet(),
+                    playingScreenViewModel = playingScreenViewModel,
+                    currentPlayingSong = currentPlayingSong,
+                    mediaState = mediaState,
+                    onPlayPauseClick = audioViewModel::onPlayPauseClick,
+                    onPlaySong = { playlistTitle, songs, song ->
+                        audioViewModel.setPlaylistName(playlistTitle)
+                        audioViewModel.loadPlaylist(songs, song)
+                        audioViewModel.playSong(song)
+                    }
+                )
+
+                NavigationTab.OTHER -> OtherScreen(
+                    remainingScreenFeatures = featuresViewModel.remainingScreenFeatures?.toList(),
+                    navController = navController
+                )
+
+                NavigationTab.ALBUMS -> AlbumsScreen(
+                    navController = navController,
+                    loadingStatus = loadingStatus,
+                    albums = albums,
+                    listState = albumsListState,
+                    spacerHeight = spacerHeight,
+                    selectedScreenFeatures = selectedScreenFeatures?.toSet(),
+                    playingScreenViewModel = playingScreenViewModel,
+                    currentPlayingSong = currentPlayingSong,
+                    mediaState = mediaState,
+                    onPlayPauseClick = audioViewModel::onPlayPauseClick
+                )
+
+                NavigationTab.SEARCH -> SearchScreen(
+                    navController = navController,
+                    loadingStatus = loadingStatus,
+                    onUpdateQuery = viewModel::updateQuery,
+                    query = query,
+                    filteredSongs = filteredSongs,
+                    filteredAlbums = filteredAlbums,
+                    filteredArtists = filteredArtists,
+                    audioViewModel = audioViewModel
+                )
+
+                NavigationTab.ARTISTS -> ArtistsScreen(
+                    navController = navController,
+                    loadingStatus = loadingStatus,
+                    listState = artistsListState,
+                    spacerHeight = spacerHeight,
+                    artists = artists,
+                    currentPlayingSong = currentPlayingSong,
+                    mediaState = mediaState,
+                    onPlayPauseClick = audioViewModel::onPlayPauseClick,
+                    selectedScreenFeatures = selectedScreenFeatures?.toSet(),
+                    playingScreenViewModel = playingScreenViewModel
+                )
+
+                NavigationTab.FOLDERS -> FoldersScreen(
+                    navController = navController,
+                    listState = foldersListState,
+                    loadingStatus = loadingStatus,
+                    spacerHeight = spacerHeight,
+                    currentPlayingSong = currentPlayingSong,
+                    mediaState = mediaState,
+                    onPlayPauseClick = audioViewModel::onPlayPauseClick,
+                    playingScreenViewModel = playingScreenViewModel,
+                    selectedScreenFeatures = selectedScreenFeatures?.toSet()
+                )
+
+                NavigationTab.PLAYLISTS -> PlaylistsScreen(
+                    navController = navController,
+                    listState = playlistsListState,
+                    loadingStatus = loadingStatus,
+                    playlists = playlists,
+                    spacerHeight = spacerHeight,
+                    onAddPlaylist = viewModel::addPlaylistToCollection,
+                    onRenamePlaylist = viewModel::renamePlaylist,
+                    viewModel = playlistsViewModel,
+                    playlistSelectionViewModel = playlistSelectionViewModel,
+                    currentPlayingSong = currentPlayingSong,
+                    mediaState = mediaState,
+                    onPlayPauseClick = audioViewModel::onPlayPauseClick,
+                    playingScreenViewModel = playingScreenViewModel,
+                    selectedScreenFeatures = selectedScreenFeatures?.toSet(),
+                    mainViewModel = viewModel
+                )
+
+                null -> Text("Error")
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeContentPadding()
-                    .padding(top = 16.dp)
+                    .padding(horizontal = 16.dp)
+                    .padding(innerPadding)
             ) {
-                when (selectedTab) {
-                    NavigationTab.HOME -> HomeScreen(
-                        navController,
-                        loadingStatus,
-                        spacerHeight = spacerHeight,
-                        audioViewModel = audioViewModel
-                    )
-
-                    NavigationTab.SONGS -> SongsScreen(
-                        navController = navController,
-                        songs,
-                        songsListState,
-                        loadingStatus,
-                        spacerHeight = spacerHeight,
-                        selectedScreenFeatures = selectedScreenFeatures?.toSet(),
-                        playingScreenViewModel = playingScreenViewModel,
-                        currentPlayingSong = currentPlayingSong,
-                        mediaState = mediaState,
-                        onPlayPauseClick = audioViewModel::onPlayPauseClick,
-                        onPlaySong = { playlistTitle, songs, song ->
-                            audioViewModel.setPlaylistName(playlistTitle)
-                            audioViewModel.loadPlaylist(songs, song)
-                            audioViewModel.playSong(song)
-                        }
-                    )
-
-                    NavigationTab.OTHER -> OtherScreen(
-                        remainingScreenFeatures = featuresViewModel.remainingScreenFeatures?.toList(),
-                        navController = navController
-                    )
-
-                    NavigationTab.ALBUMS -> AlbumsScreen(
-                        navController = navController,
-                        loadingStatus = loadingStatus,
-                        albums = albums,
-                        listState = albumsListState,
-                        spacerHeight = spacerHeight,
-                        selectedScreenFeatures = selectedScreenFeatures?.toSet(),
-                        playingScreenViewModel = playingScreenViewModel,
-                        currentPlayingSong = currentPlayingSong,
-                        mediaState = mediaState,
-                        onPlayPauseClick = audioViewModel::onPlayPauseClick
-                    )
-
-                    NavigationTab.SEARCH -> SearchScreen(
-                        navController = navController,
-                        loadingStatus = loadingStatus,
-                        onUpdateQuery = viewModel::updateQuery,
-                        query = query,
-                        filteredSongs = filteredSongs,
-                        filteredAlbums = filteredAlbums,
-                        filteredArtists = filteredArtists,
-                        audioViewModel = audioViewModel
-                    )
-
-                    NavigationTab.ARTISTS -> ArtistsScreen(
-                        navController = navController,
-                        loadingStatus = loadingStatus,
-                        listState = artistsListState,
-                        spacerHeight = spacerHeight,
-                        artists = artists,
-                        currentPlayingSong = currentPlayingSong,
-                        mediaState = mediaState,
-                        onPlayPauseClick = audioViewModel::onPlayPauseClick,
-                        selectedScreenFeatures = selectedScreenFeatures?.toSet(),
-                        playingScreenViewModel = playingScreenViewModel
-                    )
-
-                    NavigationTab.FOLDERS -> FoldersScreen(
-                        navController = navController,
-                        listState = foldersListState,
-                        loadingStatus = loadingStatus,
-                        spacerHeight = spacerHeight,
-                        currentPlayingSong = currentPlayingSong,
-                        mediaState = mediaState,
-                        onPlayPauseClick = audioViewModel::onPlayPauseClick,
-                        playingScreenViewModel = playingScreenViewModel,
-                        selectedScreenFeatures = selectedScreenFeatures?.toSet()
-                    )
-
-                    NavigationTab.PLAYLISTS -> PlaylistsScreen(
-                        navController = navController,
-                        listState = playlistsListState,
-                        loadingStatus = loadingStatus,
-                        playlists = playlists,
-                        spacerHeight = spacerHeight,
-                        onAddPlaylist = viewModel::addPlaylistToCollection,
-                        onRenamePlaylist = viewModel::renamePlaylist,
-                        viewModel = playlistsViewModel,
-                        playlistSelectionViewModel = playlistSelectionViewModel,
-                        currentPlayingSong = currentPlayingSong,
-                        mediaState = mediaState,
-                        onPlayPauseClick = audioViewModel::onPlayPauseClick,
-                        playingScreenViewModel = playingScreenViewModel,
-                        selectedScreenFeatures = selectedScreenFeatures?.toSet(),
-                        mainViewModel = viewModel
-                    )
-
-                    null -> Text("Error")
-                }
-
                 AnimatedVisibility(
                     visible = isSelectionMode && !isPlaylistSelectionMode,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                 ) {
                     SongSelectionPill()
                 }
 
                 AnimatedVisibility(
                     visible = isPlaylistSelectionMode,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                 ) {
                     AddToPlaylistPill()
                 }
 
                 AnimatedVisibility(
                     visible = isPSelectionMode,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                 ) {
                     PlaylistSelectionPill(
                         viewModel = playlistSelectionViewModel,
@@ -221,7 +227,7 @@ fun MainScreen(
 
                 AnimatedVisibility(
                     visible = !isTextFieldFocused && !isSelectionMode && !isPSelectionMode,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                 ) {
                     Column {
                         currentPlayingSong?.let { song ->

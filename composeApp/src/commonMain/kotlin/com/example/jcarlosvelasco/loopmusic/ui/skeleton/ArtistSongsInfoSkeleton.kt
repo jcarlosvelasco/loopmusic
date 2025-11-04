@@ -10,7 +10,7 @@ import com.example.jcarlosvelasco.loopmusic.ui.theme.appTypography
 @Composable
 fun ArtistSongsInfoSkeleton() {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         ShimmerTextSkeleton(
             textStyle = appTypography().headlineMedium,

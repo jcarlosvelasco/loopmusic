@@ -29,10 +29,10 @@ import com.example.jcarlosvelasco.loopmusic.presentation.main.SongsLoadingStatus
 import com.example.jcarlosvelasco.loopmusic.presentation.playing.PlayingScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.playlist_selection.PlaylistSelectionViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.playlists.PlaylistsViewModel
-import com.example.jcarlosvelasco.loopmusic.ui.components.AlertDialogWithTextField
 import com.example.jcarlosvelasco.loopmusic.ui.components.AlertDialog
+import com.example.jcarlosvelasco.loopmusic.ui.components.AlertDialogWithTextField
+import com.example.jcarlosvelasco.loopmusic.ui.components.ConditionalPlayingPill
 import com.example.jcarlosvelasco.loopmusic.ui.components.PlaylistSelectionPill
-import com.example.jcarlosvelasco.loopmusic.ui.components.ScreenWithPlayingPill
 import com.example.jcarlosvelasco.loopmusic.ui.features.playing.MediaState
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.PlaylistDetailRoute
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.safeNavigate
@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 import loopmusic.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistsScreen(
     navController: NavHostController,
@@ -71,53 +71,23 @@ fun PlaylistsScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
+    val onBackAction = {
+        playlistSelectionViewModel.updateSelectionMode(false)
+        playlistSelectionViewModel.updateRenameOptionSelected(false)
+        viewModel.updateCreatePlaylistModal(false)
+        safePopBackStack(navController)
+    }
+
     if (fromOthers) {
         BackHandler {
-            playlistSelectionViewModel.updateSelectionMode(false)
-            playlistSelectionViewModel.updateRenameOptionSelected(false)
-            viewModel.updateCreatePlaylistModal(false)
-            safePopBackStack(navController)
+            onBackAction()
         }
     }
 
-    Scaffold {
-        ScreenWithPlayingPill(
-            navController = navController,
-            selectedScreenFeatures = selectedScreenFeatures,
-            playingScreenViewModel = playingScreenViewModel,
-            modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding(),
-            selectedFeature = SCREEN_FEATURES.Playlists,
-            condition = !isSelectionMode,
-            currentPlayingSong = currentPlayingSong,
-            mediaState = mediaState,
-            onPlayPauseClick = onPlayPauseClick
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    if (fromOthers) {
-                        IconButton(
-                            onClick = {
-                                playlistSelectionViewModel.updateSelectionMode(false)
-                                playlistSelectionViewModel.updateRenameOptionSelected(false)
-                                viewModel.updateCreatePlaylistModal(false)
-                                safePopBackStack(navController)
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Go back"
-                            )
-                        }
-                        Spacer(modifier = Modifier.padding(12.dp))
-                    }
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -151,151 +121,195 @@ fun PlaylistsScreen(
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    AnimatedVisibility(
-                        visible = isCreatePlaylistModalOpen
-                    ) {
-                        AlertDialogWithTextField(
-                            onDismissRequest = { viewModel.updateCreatePlaylistModal(false) },
-                            onConfirmation = { inputText ->
-                                coroutineScope.launch {
-                                    val newPlaylistId = viewModel.storePlaylist(Playlist(name = inputText))
-                                    val playlist = Playlist(newPlaylistId, inputText)
-                                    onAddPlaylist(playlist)
-                                    viewModel.updateCreatePlaylistModal(false)
-                                }
-                            },
-                            dialogTitle = stringResource(Res.string.playlists_create_dialog_title),
-                            dialogText = stringResource(Res.string.playlists_create_dialog_desc),
-                            icon = Icons.Default.Add
-                        )
+                },
+                navigationIcon = {
+                    if (fromOthers) {
+                        IconButton(onClick = onBackAction) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
+                            )
+                        }
                     }
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                )
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .fillMaxSize(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    AnimatedVisibility(
-                        visible = isRenameOptionSelected
-                    ) {
-                        AlertDialogWithTextField(
-                            onDismissRequest = { playlistSelectionViewModel.updateRenameOptionSelected(false) },
-                            onConfirmation = { inputText ->
-                                if (selectedPlaylists.size != 1) return@AlertDialogWithTextField
-                                log(
-                                    "PlaylistsScreen",
-                                    "Renaming playlist ${selectedPlaylists.first().name} to $inputText"
-                                )
-                                onRenamePlaylist(selectedPlaylists.first().id, inputText)
-                                playlistSelectionViewModel.updateRenameOptionSelected(false)
-                                playlistSelectionViewModel.updateSelectionMode(false)
-                            },
-                            dialogTitle = stringResource(Res.string.playlists_rename_dialog_title),
-                            dialogText = stringResource(Res.string.playlists_rename_dialog_desc),
-                            icon = Icons.Default.Edit
-                        )
-                    }
+                AnimatedVisibility(
+                    visible = isCreatePlaylistModalOpen
+                ) {
+                    AlertDialogWithTextField(
+                        onDismissRequest = { viewModel.updateCreatePlaylistModal(false) },
+                        onConfirmation = { inputText ->
+                            coroutineScope.launch {
+                                val newPlaylistId = viewModel.storePlaylist(Playlist(name = inputText))
+                                val playlist = Playlist(newPlaylistId, inputText)
+                                onAddPlaylist(playlist)
+                                viewModel.updateCreatePlaylistModal(false)
+                            }
+                        },
+                        dialogTitle = stringResource(Res.string.playlists_create_dialog_title),
+                        dialogText = stringResource(Res.string.playlists_create_dialog_desc),
+                        icon = Icons.Default.Add
+                    )
+                }
 
-                    AnimatedVisibility(
-                        visible = isRemovePlaylistModalOpen
-                    ) {
-                        AlertDialog(
-                            onDismissRequest = { viewModel.setIsRemovePlaylistModalOpen(false) },
-                            onConfirmation = {
-                                playlistSelectionViewModel.updateSelectionMode(false)
-                                mainViewModel.removePlaylists(selectedPlaylists)
-                                viewModel.setIsRemovePlaylistModalOpen(false)
-                            },
-                            dialogTitle = stringResource(Res.string.playlists_delete_dialog_title),
-                            dialogText = stringResource(Res.string.playlists_delete_dialog_desc),
-                            icon = Icons.Default.Delete
-                        )
-                    }
+                AnimatedVisibility(
+                    visible = isRenameOptionSelected
+                ) {
+                    AlertDialogWithTextField(
+                        onDismissRequest = { playlistSelectionViewModel.updateRenameOptionSelected(false) },
+                        onConfirmation = { inputText ->
+                            if (selectedPlaylists.size != 1) return@AlertDialogWithTextField
+                            log(
+                                "PlaylistsScreen",
+                                "Renaming playlist ${selectedPlaylists.first().name} to $inputText"
+                            )
+                            onRenamePlaylist(selectedPlaylists.first().id, inputText)
+                            playlistSelectionViewModel.updateRenameOptionSelected(false)
+                            playlistSelectionViewModel.updateSelectionMode(false)
+                        },
+                        dialogTitle = stringResource(Res.string.playlists_rename_dialog_title),
+                        dialogText = stringResource(Res.string.playlists_rename_dialog_desc),
+                        icon = Icons.Default.Edit
+                    )
+                }
 
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        when {
-                            playlists == null -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillParentMaxSize()
-                                            .wrapContentHeight(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator()
-                                    }
+                AnimatedVisibility(
+                    visible = isRemovePlaylistModalOpen
+                ) {
+                    AlertDialog(
+                        onDismissRequest = { viewModel.setIsRemovePlaylistModalOpen(false) },
+                        onConfirmation = {
+                            playlistSelectionViewModel.updateSelectionMode(false)
+                            mainViewModel.removePlaylists(selectedPlaylists)
+                            viewModel.setIsRemovePlaylistModalOpen(false)
+                        },
+                        dialogTitle = stringResource(Res.string.playlists_delete_dialog_title),
+                        dialogText = stringResource(Res.string.playlists_delete_dialog_desc),
+                        icon = Icons.Default.Delete
+                    )
+                }
+
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    when {
+                        playlists == null -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillParentMaxSize()
+                                        .wrapContentHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
                                 }
                             }
+                        }
 
-                            playlists.isEmpty() -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillParentMaxSize()
-                                            .wrapContentHeight(),
-                                        contentAlignment = Alignment.Center
+                        playlists.isEmpty() -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillParentMaxSize()
+                                        .wrapContentHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(
-                                                "📁",
-                                                style = appTypography().headlineLarge,
-                                                modifier = Modifier.padding(bottom = 8.dp)
-                                            )
-                                            Text(
-                                                stringResource(Res.string.playlists_no_playlists),
-                                                style = appTypography().bodyMedium
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            else -> {
-                                for (item in playlists) {
-                                    item {
-                                        PlaylistItem(
-                                            playlist = item,
-                                            modifier = Modifier.padding(vertical = 8.dp),
-                                            onClick = {
-                                                if (isSelectionMode) {
-                                                    playlistSelectionViewModel.togglePlaylistSelection(item)
-                                                } else {
-                                                    safeNavigate(navController, PlaylistDetailRoute(item.id))
-                                                }
-                                            },
-                                            onLongClick = {
-                                                playlistSelectionViewModel.updateSelectionMode(true)
-                                                playlistSelectionViewModel.togglePlaylistSelection(item)
-                                            },
-                                            isSelectionMode = isSelectionMode,
-                                            isSelected = selectedPlaylists.contains(item)
+                                        Text(
+                                            "📁",
+                                            style = appTypography().headlineLarge,
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        Text(
+                                            stringResource(Res.string.playlists_no_playlists),
+                                            style = appTypography().bodyMedium
                                         )
                                     }
                                 }
+                            }
+                        }
+
+                        else -> {
+                            for (item in playlists) {
                                 item {
-                                    Spacer(modifier = Modifier.height(8.dp + spacerHeight))
+                                    PlaylistItem(
+                                        playlist = item,
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        onClick = {
+                                            if (isSelectionMode) {
+                                                playlistSelectionViewModel.togglePlaylistSelection(item)
+                                            } else {
+                                                safeNavigate(navController, PlaylistDetailRoute(item.id))
+                                            }
+                                        },
+                                        onLongClick = {
+                                            playlistSelectionViewModel.updateSelectionMode(true)
+                                            playlistSelectionViewModel.togglePlaylistSelection(item)
+                                        },
+                                        isSelectionMode = isSelectionMode,
+                                        isSelected = selectedPlaylists.contains(item)
+                                    )
                                 }
+                            }
+                            item {
+                                Spacer(modifier = Modifier.height(8.dp + spacerHeight))
                             }
                         }
                     }
                 }
-                selectedScreenFeatures?.let { features ->
-                    AnimatedVisibility(
-                        visible = isSelectionMode && !features.contains(SCREEN_FEATURES.Playlists),
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    ) {
-                        PlaylistSelectionPill(
-                            viewModel = playlistSelectionViewModel,
-                            playlistScreenViewModel = viewModel
-                        )
-                    }
+            }
+
+            selectedScreenFeatures?.let { features ->
+                AnimatedVisibility(
+                    visible = isSelectionMode && !features.contains(SCREEN_FEATURES.Playlists),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    PlaylistSelectionPill(
+                        viewModel = playlistSelectionViewModel,
+                        playlistScreenViewModel = viewModel
+                    )
                 }
             }
+
+            ConditionalPlayingPill(
+                navController = navController,
+                selectedScreenFeatures = selectedScreenFeatures,
+                playingScreenViewModel = playingScreenViewModel,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp),
+                selectedFeature = SCREEN_FEATURES.Playlists,
+                condition = !isSelectionMode,
+                currentPlayingSong = currentPlayingSong,
+                mediaState = mediaState,
+                onPlayPauseClick = onPlayPauseClick
+            )
         }
     }
 }
-

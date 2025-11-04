@@ -3,8 +3,7 @@ package com.example.jcarlosvelasco.loopmusic.ui.features.other
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -17,33 +16,49 @@ import loopmusic.composeapp.generated.resources.Res
 import loopmusic.composeapp.generated.resources.others_header
 import org.jetbrains.compose.resources.stringResource
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OtherScreen(
     navController: NavHostController,
     remainingScreenFeatures: List<SCREEN_FEATURES>?
 ) {
-    Scaffold {
-        Column(
-            modifier = Modifier
-                .safeContentPadding()
-                .fillMaxSize()
-        ) {
-            Text(
-                stringResource(Res.string.others_header),
-                style = appTypography().headlineLarge
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        stringResource(Res.string.others_header),
+                        style = appTypography().headlineLarge
+                    )
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                )
             )
-
-            Spacer(modifier = Modifier.padding(12.dp))
-
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .fillMaxSize(),
+        ) {
             remainingScreenFeatures?.let { features ->
-                LazyColumn {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     for (item in features) {
                         item {
                             Text(
                                 text = stringResource(item.titleRes),
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(bottom = 8.dp)
                                     .clickable {
                                         safeNavigate(navController, item.getRoute(true))
                                     },

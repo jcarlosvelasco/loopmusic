@@ -35,6 +35,7 @@ import loopmusic.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     navController: NavHostController,
@@ -55,238 +56,275 @@ fun SearchScreen(
 
     val playlistTitle = stringResource(Res.string.playlist_search)
 
-    Scaffold {
-        Column(
-            modifier = Modifier
-                .safeContentPadding()
-                .fillMaxSize()
-        ) {
-            if (fromOthers) {
-                IconButton(
-                    onClick = { safePopBackStack(navController) }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Go back"
-                    )
-                }
-                Spacer(modifier = Modifier.padding(12.dp))
-            }
-
-            AnimatedVisibility(
-                visible = !isTextFieldFocused,
-            ) {
-                Column {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            stringResource(Res.string.search_header),
-                            style = appTypography().headlineLarge
-                        )
-                        if (loadingStatus == SongsLoadingStatus.LOADING) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 4.dp
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                modifier = if (!isTextFieldFocused) Modifier else Modifier.height(0.dp),
+                title = {
+                    if (!isTextFieldFocused) {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    stringResource(Res.string.search_header),
+                                    style = appTypography().headlineLarge
+                                )
+                                if (loadingStatus == SongsLoadingStatus.LOADING) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 4.dp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                navigationIcon = {
+                    if (!isTextFieldFocused && fromOthers) {
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back"
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.padding(12.dp))
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                SearchBar(
-                    modifier = Modifier
-                        .weight(1f)
-                        .onFocusChanged { focusState ->
-                            viewModel.updateTextFieldFocus(focusState.isFocused)
-                        },
-                    searchBarText = query,
-                    setSearchBarText = { onUpdateQuery(it) },
-                    setSearchBarActive = { viewModel.updateTextFieldFocus(it) },
-                    searchBarActive = isTextFieldFocused,
-                    onClearClick = { onUpdateQuery("") }
+                },
+                colors = TopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                    navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                    titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                    actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                    subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
                 )
-            }
-
-            Spacer(modifier = Modifier.padding(12.dp))
-
-            AnimatedVisibility(
-                visible = isTextFieldFocused,
-            ) {
-                LazyRow(
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 4.dp)
+                .fillMaxSize(),
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    if (isSongsButtonActive) {
-                        item {
-                            Button(
-                                onClick = { viewModel.updateSongsButtonActive(false) }
-                            ) {
-                                Text(stringResource(Res.string.search_songs_btn), style = appTypography().bodyLarge)
-                            }
-                        }
-                    } else {
-                        item {
-                            OutlinedButton(
-                                onClick = { viewModel.updateSongsButtonActive(true) }
-                            ) {
-                                Text(stringResource(Res.string.search_songs_btn), style = appTypography().bodyLarge)
-                            }
-                        }
-                    }
-
-                    if (isAlbumsButtonActive) {
-                        item {
-                            Button(
-                                onClick = { viewModel.updateAlbumsButtonActive(false) }
-                            ) {
-                                Text(stringResource(Res.string.search_albums_btn), style = appTypography().bodyLarge)
-                            }
-                        }
-                    } else {
-                        item {
-                            OutlinedButton(
-                                onClick = { viewModel.updateAlbumsButtonActive(true) }
-                            ) {
-                                Text(stringResource(Res.string.search_albums_btn), style = appTypography().bodyLarge)
-                            }
-                        }
-                    }
-
-                    if (isArtistsButtonActive) {
-                        item {
-                            Button(
-                                onClick = { viewModel.updateArtistsButtonActive(false) }
-                            ) {
-                                Text(stringResource(Res.string.search_artists_btn), style = appTypography().bodyLarge)
-                            }
-                        }
-                    } else {
-                        item {
-                            OutlinedButton(
-                                onClick = { viewModel.updateArtistsButtonActive(true) }
-                            ) {
-                                Text(stringResource(Res.string.search_artists_btn), style = appTypography().bodyLarge)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.padding(12.dp))
-
-            if (query == "") {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
+                    SearchBar(
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { focusState ->
+                                viewModel.updateTextFieldFocus(focusState.isFocused)
+                            },
+                        searchBarText = query,
+                        setSearchBarText = { onUpdateQuery(it) },
+                        setSearchBarActive = { viewModel.updateTextFieldFocus(it) },
+                        searchBarActive = isTextFieldFocused,
+                        onClearClick = { onUpdateQuery("") }
                     )
-                    Text(stringResource(Res.string.search_text), style = appTypography().headlineMedium)
                 }
-            }
-            else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f)
+
+                Spacer(modifier = Modifier.padding(12.dp))
+
+                AnimatedVisibility(
+                    visible = isTextFieldFocused,
                 ) {
-                    filteredSongs?.let {
-                        if (it.isNotEmpty() && isSongsButtonActive) {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        if (isSongsButtonActive) {
                             item {
-                                Text(stringResource(Res.string.search_songs_text), style = appTypography().bodyLarge)
-                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = { viewModel.updateSongsButtonActive(false) }
+                                ) {
+                                    Text(stringResource(Res.string.search_songs_btn), style = appTypography().bodyLarge)
+                                }
                             }
-                            it.forEach { song ->
-                                item {
-                                    SongItem(
-                                        song = song,
-                                        modifier = Modifier.padding(bottom = 16.dp),
-                                        onClick = {
-                                            audioViewModel.setPlaylistName(playlistTitle)
-                                            audioViewModel.loadPlaylist(listOf(song), song)
-                                            audioViewModel.playSong(song)
-                                            safeNavigate(
-                                                navController,
-                                                PlayingRoute,
-                                            )
-                                        },
-                                        onLongClick = {}
+                        } else {
+                            item {
+                                OutlinedButton(
+                                    onClick = { viewModel.updateSongsButtonActive(true) }
+                                ) {
+                                    Text(stringResource(Res.string.search_songs_btn), style = appTypography().bodyLarge)
+                                }
+                            }
+                        }
+
+                        if (isAlbumsButtonActive) {
+                            item {
+                                Button(
+                                    onClick = { viewModel.updateAlbumsButtonActive(false) }
+                                ) {
+                                    Text(
+                                        stringResource(Res.string.search_albums_btn),
+                                        style = appTypography().bodyLarge
+                                    )
+                                }
+                            }
+                        } else {
+                            item {
+                                OutlinedButton(
+                                    onClick = { viewModel.updateAlbumsButtonActive(true) }
+                                ) {
+                                    Text(
+                                        stringResource(Res.string.search_albums_btn),
+                                        style = appTypography().bodyLarge
+                                    )
+                                }
+                            }
+                        }
+
+                        if (isArtistsButtonActive) {
+                            item {
+                                Button(
+                                    onClick = { viewModel.updateArtistsButtonActive(false) }
+                                ) {
+                                    Text(
+                                        stringResource(Res.string.search_artists_btn),
+                                        style = appTypography().bodyLarge
+                                    )
+                                }
+                            }
+                        } else {
+                            item {
+                                OutlinedButton(
+                                    onClick = { viewModel.updateArtistsButtonActive(true) }
+                                ) {
+                                    Text(
+                                        stringResource(Res.string.search_artists_btn),
+                                        style = appTypography().bodyLarge
                                     )
                                 }
                             }
                         }
                     }
+                }
 
-                    filteredAlbums?.let {
-                        if (it.isNotEmpty() && isAlbumsButtonActive) {
-                            item {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(stringResource(Res.string.search_albums_text), style = appTypography().bodyLarge)
-                                Spacer(modifier = Modifier.height(12.dp))
-                            }
-                            it.forEach { album ->
+                Spacer(modifier = Modifier.padding(12.dp))
+
+                if (query == "") {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search"
+                        )
+                        Text(stringResource(Res.string.search_text), style = appTypography().headlineMedium)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        filteredSongs?.let {
+                            if (it.isNotEmpty() && isSongsButtonActive) {
                                 item {
-                                    AlbumItem(
-                                        item = album,
-                                        modifier = Modifier.padding(bottom = 16.dp),
-                                        onClick = {
-                                            safeNavigate(navController, AlbumDetailRoute(album.id))
-                                        }
+                                    Text(
+                                        stringResource(Res.string.search_songs_text),
+                                        style = appTypography().bodyLarge
                                     )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
+                                it.forEach { song ->
+                                    item {
+                                        SongItem(
+                                            song = song,
+                                            modifier = Modifier.padding(bottom = 16.dp),
+                                            onClick = {
+                                                audioViewModel.setPlaylistName(playlistTitle)
+                                                audioViewModel.loadPlaylist(listOf(song), song)
+                                                audioViewModel.playSong(song)
+                                                safeNavigate(
+                                                    navController,
+                                                    PlayingRoute,
+                                                )
+                                            },
+                                            onLongClick = {}
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    filteredArtists?.let {
-                        if (it.isNotEmpty() && isArtistsButtonActive) {
-                            item {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(stringResource(Res.string.search_artists_text), style = appTypography().bodyLarge)
-                                Spacer(modifier = Modifier.height(12.dp))
-                            }
-                            it.forEach { artist ->
+                        filteredAlbums?.let {
+                            if (it.isNotEmpty() && isAlbumsButtonActive) {
                                 item {
-                                    ArtistItem(
-                                        item = artist,
-                                        modifier = Modifier.padding(bottom = 16.dp),
-                                        onClick = {
-                                            safeNavigate(navController, ArtistDetailRoute(artist.id))
-                                        }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        stringResource(Res.string.search_albums_text),
+                                        style = appTypography().bodyLarge
                                     )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
+                                it.forEach { album ->
+                                    item {
+                                        AlbumItem(
+                                            item = album,
+                                            modifier = Modifier.padding(bottom = 16.dp),
+                                            onClick = {
+                                                safeNavigate(navController, AlbumDetailRoute(album.id))
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (filteredSongs.isNullOrEmpty() && filteredAlbums.isNullOrEmpty() && filteredArtists.isNullOrEmpty()) {
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Text("No results found", style = appTypography().bodyLarge)
+                        filteredArtists?.let {
+                            if (it.isNotEmpty() && isArtistsButtonActive) {
+                                item {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        stringResource(Res.string.search_artists_text),
+                                        style = appTypography().bodyLarge
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
+                                it.forEach { artist ->
+                                    item {
+                                        ArtistItem(
+                                            item = artist,
+                                            modifier = Modifier.padding(bottom = 16.dp),
+                                            onClick = {
+                                                safeNavigate(navController, ArtistDetailRoute(artist.id))
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (filteredSongs.isNullOrEmpty() && filteredAlbums.isNullOrEmpty() && filteredArtists.isNullOrEmpty()) {
+                            item {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Text("No results found", style = appTypography().bodyLarge)
+                                }
                             }
                         }
                     }
                 }
             }
+
         }
     }
 }

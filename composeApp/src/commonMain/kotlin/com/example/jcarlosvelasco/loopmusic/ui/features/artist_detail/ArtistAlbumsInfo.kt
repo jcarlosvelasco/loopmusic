@@ -23,7 +23,7 @@ fun ArtistAlbumsInfo(
     navController: NavHostController,
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(stringResource(Res.string.artist_detail_albums), style = appTypography().headlineMedium)
 
@@ -33,7 +33,7 @@ fun ArtistAlbumsInfo(
             for (album in albums) {
                 AlbumItem(
                     album,
-                    Modifier.padding(bottom = 16.dp),
+                    Modifier.padding(vertical = 8.dp),
                     onClick = {
                         safeNavigate(navController, AlbumDetailRoute(album.id))
                     }

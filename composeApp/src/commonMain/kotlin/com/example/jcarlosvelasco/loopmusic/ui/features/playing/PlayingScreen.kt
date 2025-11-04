@@ -19,7 +19,6 @@ import androidx.navigation.NavHostController
 import com.example.jcarlosvelasco.loopmusic.presentation.audio.AudioViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.playing.PlayingScreenViewModel
 import com.example.jcarlosvelasco.loopmusic.presentation.theme.ThemeViewModel
-import com.example.jcarlosvelasco.loopmusic.ui.PlatformBox
 import com.example.jcarlosvelasco.loopmusic.ui.WithOrientation
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.AlbumDetailRoute
 import com.example.jcarlosvelasco.loopmusic.ui.navigation.ArtistDetailRoute
@@ -35,6 +34,7 @@ import loopmusic.composeapp.generated.resources.playing_gotoartist
 import loopmusic.composeapp.generated.resources.playing_playing_from
 import org.jetbrains.compose.resources.stringResource
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayingScreen(
     navController: NavHostController,
@@ -107,33 +107,14 @@ fun PlayingScreen(
         }
     }
 
-    PlatformBox {
-        WithOrientation { isLandscape ->
-            Scaffold {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .safeContentPadding()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { safePopBackStack(navController) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Previous"
-                            )
-                        }
-
+    WithOrientation { isLandscape ->
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = {
                         currentPlayingSong?.let {
                             if (!isExternal) {
                                 Column(
-                                    modifier = Modifier
-                                        .weight(1f),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
@@ -148,7 +129,30 @@ fun PlayingScreen(
                                         textAlign = TextAlign.Center
                                     )
                                 }
-
+                            }
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { safePopBackStack(navController) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Previous"
+                            )
+                        }
+                    },
+                    colors = TopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
+                        navigationIconContentColor = TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
+                        titleContentColor = TopAppBarDefaults.topAppBarColors().titleContentColor,
+                        actionIconContentColor = TopAppBarDefaults.topAppBarColors().actionIconContentColor,
+                        subtitleContentColor = TopAppBarDefaults.topAppBarColors().subtitleContentColor
+                    ),
+                    actions = {
+                        currentPlayingSong?.let {
+                            if (!isExternal) {
                                 Box {
                                     IconButton(onClick = { viewModel.updateIsMenuExpanded(!isMenuExpanded) }) {
                                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -199,35 +203,45 @@ fun PlayingScreen(
                             }
                         }
                     }
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 28.dp)
+                    .fillMaxSize(),
+            ) {
+                if (isLandscape) {
+                    currentPlayingSong?.let {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            PlayingScreenImage(
+                                currentPlayingSong = it,
+                                fullQualityArtwork = fullQualityArtwork
+                            )
 
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    if (isLandscape) {
-                        currentPlayingSong?.let {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                PlayingScreenImage(
-                                    currentPlayingSong = it,
-                                    fullQualityArtwork = fullQualityArtwork
-                                )
-
-                                PlayingInfo(
-                                    song = it,
-                                    currentPosition = currentPosition,
-                                    audioViewModel = audioViewModel,
-                                    dominantColorState = dominantColorState,
-                                    viewModel = viewModel,
-                                    listMode = listMode,
-                                    mediaState = mediaState,
-                                    playMode = playMode,
-                                    themeViewModel = themeViewModel
-                                )
-                            }
+                            PlayingInfo(
+                                song = it,
+                                currentPosition = currentPosition,
+                                audioViewModel = audioViewModel,
+                                dominantColorState = dominantColorState,
+                                viewModel = viewModel,
+                                listMode = listMode,
+                                mediaState = mediaState,
+                                playMode = playMode,
+                                themeViewModel = themeViewModel
+                            )
                         }
-                    } else {
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                         currentPlayingSong?.let {
                             PlayingScreenImage(
                                 currentPlayingSong = it,
